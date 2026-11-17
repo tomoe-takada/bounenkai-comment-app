@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="color-scheme" content="light dark" />
     <link rel="icon" href="data:," />
-    <title>忘年会2026</title>
+    <title>忘年会 2026</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;500;700;800&family=Zen+Maru+Gothic:wght@700;900&display=swap" rel="stylesheet" />
@@ -130,6 +130,44 @@
         font-size: .52em; font-weight: 700; opacity: .75;
         margin-right: .7em; vertical-align: .35em;
       }
+      .flow-item .ftopic {
+        font-size: .46em; font-weight: 800;
+        background: rgba(233,161,59,.94); color: #231a08;
+        border-radius: 999px; padding: .22em .65em;
+        margin-right: .7em; vertical-align: .45em;
+        text-shadow: none; white-space: nowrap;
+      }
+
+      /* QR code shown only while the stage is fullscreen (projector use) */
+      .stage { --qr-size: 104px; }
+      .qr-box {
+        display: none; position: absolute; right: 18px; bottom: 18px; z-index: 8;
+        background: #ffffff; color: #1c1a15;
+        border-radius: 14px; padding: 10px 12px;
+        align-items: center; gap: 11px;
+        box-shadow: 0 12px 32px rgba(0,0,0,.45);
+        max-width: calc(var(--qr-size) + 230px);
+      }
+      .stage:fullscreen .qr-box { display: flex; }
+      .stage:fullscreen .spot-progress { right: calc(var(--qr-size) + 266px); }
+      .qr-code {
+        width: var(--qr-size); height: var(--qr-size); flex: none;
+        display: flex; align-items: center; justify-content: center;
+        background: #ffffff;
+      }
+      .qr-code img, .qr-code canvas { width: 100% !important; height: 100% !important; display: block; }
+      .qr-caption { min-width: 148px; }
+      .qr-size-ctl { display: flex; align-items: center; gap: 6px; margin-top: 8px; }
+      .qr-size-ctl button {
+        appearance: none; border: 1px solid #d8d2c4; background: #f3ecdf; color: #1c1a15;
+        width: 30px; height: 30px; min-height: 30px; border-radius: 8px;
+        font-weight: 800; cursor: pointer; line-height: 1; padding: 0; flex: none;
+      }
+      .qr-size-ctl input[type="range"] { width: 86px; min-height: 30px; accent-color: #d93a2b; }
+      .qr-size-val { font-size: 11.5px; font-weight: 800; color: #4c463c; min-width: 3.4em; }
+      .qr-code table { border-collapse: collapse !important; }
+      .qr-caption strong { display: block; font-size: 14.5px; font-weight: 800; line-height: 1.4; }
+      .qr-caption span { display: block; font-size: 11.5px; line-height: 1.55; color: #4c463c; margin-top: 2px; }
       .stage.fs-small { --cfs: 22px; }
       .stage.fs-mid   { --cfs: 30px; }
       .stage.fs-large { --cfs: 40px; }
@@ -145,6 +183,13 @@
       .stage.mode-spot .spot-layer { display: flex; }
       .stage.mode-spot .flow-layer { display: none; }
       .spot-card { max-width: 900px; }
+      .spot-topic {
+        display: none; width: fit-content; margin: 0 auto 14px;
+        background: var(--gold); color: #231a08;
+        font-weight: 800; font-size: clamp(13px, 1.7vw, 19px);
+        letter-spacing: .04em; border-radius: 999px; padding: 6px 16px;
+      }
+      .spot-topic.show { display: block; }
       .spot-name {
         color: var(--gold); font-weight: 800;
         font-size: clamp(15px, 2vw, 22px);
@@ -258,6 +303,25 @@
         padding: 10px 12px;
       }
       textarea { resize: vertical; min-height: 64px; line-height: 1.5; }
+      .topic-field { margin-bottom: 12px; }
+      .topic-field .field-label { display: block; font-size: 13px; font-weight: 700; margin-bottom: 6px; }
+      .topic-field .field-label .opt { color: var(--ink-soft); font-weight: 500; font-size: 12px; }
+      .topic-options { display: flex; flex-wrap: wrap; gap: 8px; }
+      .topic-chip {
+        appearance: none; border: 1px solid var(--line);
+        background: var(--surface-2); color: var(--ink);
+        font: inherit; font-weight: 700; font-size: 13.5px;
+        border-radius: 999px; padding: 8px 14px; cursor: pointer; min-height: 40px;
+        text-align: left;
+      }
+      .topic-chip[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: #fff; }
+      .topic-hint { margin: 6px 0 0; font-size: 12.5px; color: var(--ink-soft); line-height: 1.6; }
+      ul.comments .topic-badge {
+        display: inline-block; font-size: 11px; font-weight: 800;
+        background: var(--gold-soft); color: var(--ink);
+        border: 1px solid var(--line); border-radius: 999px;
+        padding: 1px 8px; margin-left: 7px; vertical-align: 1px;
+      }
       .colors { display: flex; gap: 8px; flex-wrap: wrap; margin: 2px 0 14px; }
       .color-chip {
         width: 40px; height: 40px; border-radius: 50%;
@@ -418,6 +482,82 @@
         padding: 10px 12px; font-family: ui-monospace, monospace; font-size: 12px; line-height: 1.6;
         white-space: pre-wrap; overflow-wrap: anywhere; color: var(--ink-soft);
       }
+
+      /* ---------- Admin theme: neutral gray, utilitarian ----------
+         Participants keep the warm festive palette (cream / red / gold,
+         rounded corners) defined above. Admin screens override the whole
+         palette with cool grays, switch to squarer corners, turn the mode
+         bar charcoal, and stamp the stage — so the two screens are
+         distinguishable at a glance, even from across the room. The stage
+         stamp is hidden in fullscreen so projection stays clean. */
+      body.is-admin-unlocked {
+        --bg: #e7e7ea;
+        --surface: #f7f7f8;
+        --surface-2: #e1e1e5;
+        --ink: #26262b;
+        --ink-soft: #62626a;
+        --line: #c6c6cd;
+        --accent: #3f3f46;
+        --accent-ink: #ffffff;
+        --gold: #6d6d75;
+        --gold-soft: #e1e1e5;
+        --shadow: 0 10px 28px rgba(20, 20, 25, .14);
+        --radius: 8px;
+      }
+      @media (prefers-color-scheme: dark) {
+        body.is-admin-unlocked {
+          --bg: #121214;
+          --surface: #1d1d20;
+          --surface-2: #29292e;
+          --ink: #ededf0;
+          --ink-soft: #a3a3ab;
+          --line: #3a3a41;
+          --accent: #e4e4e7;
+          --accent-ink: #17171a;
+          --gold: #a3a3ab;
+          --gold-soft: #29292e;
+          --shadow: 0 10px 28px rgba(0, 0, 0, .45);
+        }
+      }
+      body.is-admin-unlocked .rolebar {
+        background: #26262b; border-color: #26262b; color: #f4f4f5;
+      }
+      body.is-admin-unlocked .rolebar .role-lead { color: #f4f4f5; letter-spacing: .14em; }
+      body.is-admin-unlocked .rolebar .role-tabs { background: #3a3a41; border-color: #4a4a52; }
+      body.is-admin-unlocked .rolebar .role-tabs a { color: #c6c6cd; }
+      body.is-admin-unlocked .rolebar .role-tabs a[aria-current="page"] { background: #f4f4f5; color: #26262b; }
+      body.is-admin-unlocked .role-status.admin { background: #f4f4f5; color: #26262b; border-color: #f4f4f5; }
+      body.is-admin-unlocked .rolebar .role-path { color: #c6c6cd; }
+      body.is-admin-unlocked .rolebar .conn-status { background: #3a3a41; border-color: #4a4a52; color: #c6c6cd; }
+      body.is-admin-unlocked .rolebar .conn-status.live { background: #3a3a41; border-color: #4a4a52; color: #f4f4f5; }
+      body.is-admin-unlocked .stage { border-radius: 10px; outline: 3px solid #8b8b94; outline-offset: -3px; }
+      body.is-admin-unlocked .stage::before {
+        background:
+          radial-gradient(60% 50% at 50% 0%, rgba(255,255,255,.07), transparent 70%),
+          radial-gradient(40% 35% at 85% 100%, rgba(255,255,255,.04), transparent 70%);
+      }
+      body.is-admin-unlocked .stage::after {
+        content: "管理者画面";
+        position: absolute; top: 14px; left: 50%; transform: translateX(-50%);
+        z-index: 6; pointer-events: none;
+        font-size: 12px; font-weight: 800; letter-spacing: .28em; text-indent: .28em;
+        color: #e4e4e7; background: rgba(255,255,255,.10);
+        border: 1px solid rgba(255,255,255,.35); border-radius: 999px;
+        padding: 4px 14px; white-space: nowrap;
+      }
+      body.is-admin-unlocked .stage:fullscreen { outline: none; border-radius: 0; }
+      body.is-admin-unlocked .stage:fullscreen::after { display: none; }
+      @media (max-width: 760px) {
+        body.is-admin-unlocked .stage::after { display: none; }
+      }
+      body.is-admin-unlocked .panel h2,
+      body.is-admin-unlocked .howto h2,
+      body.is-admin-unlocked .fb-panel h2 {
+        font-family: "Hiragino Sans", "M PLUS Rounded 1c", sans-serif;
+        letter-spacing: .08em;
+      }
+      body.is-admin-unlocked .privacy-note { background: var(--gold-soft); border-color: var(--line); }
+      body.is-admin-unlocked .privacy-note b { color: var(--ink); }
     </style>
   </head>
   <body>
@@ -441,6 +581,7 @@
 
         <div class="spot-layer">
           <div class="spot-card" id="spotCard">
+            <div class="spot-topic" id="spotTopic"></div>
             <div class="spot-name" id="spotName"></div>
             <div class="spot-text" id="spotText"></div>
           </div>
@@ -459,6 +600,20 @@
           </div>
         </div>
         <div class="stage-frame"></div>
+
+        <div class="qr-box" id="qrBox">
+          <div class="qr-code" id="qrCode" role="img" aria-label="投稿用画面へのQRコード"></div>
+          <div class="qr-caption">
+            <strong>スマホで投稿しよう</strong>
+            <span>QRコードを読み取ると、投稿用画面が開きます</span>
+            <div class="qr-size-ctl" aria-label="QRコードのサイズ調整">
+              <button type="button" id="qrMinus" aria-label="QRコードを小さくする">−</button>
+              <input type="range" id="qrSizeInBox" min="72" max="260" step="4" value="104" aria-label="QRコードのサイズ" />
+              <button type="button" id="qrPlus" aria-label="QRコードを大きくする">＋</button>
+              <span class="qr-size-val" id="qrSizeValBox">104px</span>
+            </div>
+          </div>
+        </div>
       </section>
 
       <!-- ===== Playback controls ===== -->
@@ -491,6 +646,12 @@
           </div>
         </div>
 
+        <div class="ctl-group">
+          <span class="ctl-label">QRサイズ</span>
+          <input type="range" id="qrSize" min="72" max="260" step="4" value="104" aria-label="QRコードのサイズ（全画面表示時）" />
+          <span class="speed-val" id="qrSizeVal">104px</span>
+        </div>
+
         <span class="spacer"></span>
 
         <button class="btn" id="fsBtn" type="button">
@@ -512,6 +673,14 @@
               <span>名前 <span class="opt">（任意・空欄なら「ゲスト」）</span></span>
               <input type="text" id="nameInput" maxlength="20" placeholder="例：たなか" autocomplete="off" />
             </label>
+            <div class="topic-field">
+              <span class="field-label">お題 <span class="opt">（任意）</span></span>
+              <div class="topic-options" id="topicRow" role="group" aria-label="お題">
+                <button type="button" class="topic-chip" data-topic="" aria-pressed="true">自由コメント</button>
+                <button type="button" class="topic-chip" data-topic="future2027" aria-pressed="false">2027年のアイリッジに起きること（予言）</button>
+              </div>
+              <p class="topic-hint">お題を選ぶと、そのお題への回答としてスクリーンに表示されます。</p>
+            </div>
             <label class="field">
               <span>コメント</span>
               <textarea id="textInput" maxlength="60" placeholder="例：今年もお疲れさまでした！" required></textarea>
@@ -537,6 +706,10 @@
           <ul class="comments" id="commentList"></ul>
           <div class="list-empty" id="listEmpty">コメントはありません。フォームから投稿すると、ここに追加されます。</div>
           <div class="list-actions">
+            <button class="btn small" id="csvBtn" type="button" title="コメント一覧をCSVで出力">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>
+              CSVで出力
+            </button>
             <button class="btn small" id="shuffleBtn" type="button">順番をシャッフル</button>
             <button class="btn small danger" id="clearBtn" type="button">すべて消す</button>
           </div>
@@ -550,7 +723,7 @@
           <li><b>事前準備</b>：完成品のHTMLをGitHub Pagesに公開する</li>
           <li><b>参加者には投稿専用のURL</b>をQRコードなどで配布する。参加者はコメント投稿のみ可能で、再生・速度・文字サイズなどの設定は一切表示されません。投稿は全端末に即時反映されます</li>
           <li><b>管理者用パス</b>（実行委員だけに別途共有したランダム16桁のパス）は参加者には配布しない。このパスで開くと設定変更と全コメントの管理が使えます（設定変更も投影画面に同期します）。ページのソースにはパスのハッシュ値だけを保持し、パスそのものは埋め込んでいません</li>
-          <li>参加者は<b>自分が投稿したコメントだけ</b>、右側の「編集」「削除」から直せます。他の人の投稿は見るだけです（同じスマホ・同じ表示のあいだだけ「自分の投稿」と判定します）</li>
+          <li>参加者は<b>自分が投稿したコメントだけ</b>、右側の「編集」「削除」から直せます。他の人の投稿は見るだけです（同じスマホ・同じブラウザであれば、画面を更新しても「自分の投稿」と判定されます。ブラウザのサイトデータを消すとリセットされます）</li>
           <li>幹事のPCでは管理者モードで開き、<b>「スクリーンを全画面に」</b>でプロジェクターに投影する</li>
         </ol>
       </section>
@@ -558,6 +731,7 @@
 
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
     <script>
@@ -589,6 +763,13 @@
           appId: "1:303106426757:web:7aa5c1b7614a9e44b6e6ec"
         };
 
+        /* お題：選んだ投稿にはお題タグが付き、スクリーン・一覧・CSVに反映される */
+        var TOPIC_ID = "future2027";
+        var TOPIC_LABEL = "2027年のアイリッジに起きること（予言）";
+        /* 投稿用画面（参加者用）の公開URL。全画面表示時のQRコードの遷移先 */
+        var POST_URL = "https://tomoe-takada.github.io/bounenkai-comment-app/#post";
+        function topicLabel(id) { return id === TOPIC_ID ? TOPIC_LABEL : ""; }
+
         var COLORS = [
           { id: "white", hex: "#fdf8ec", label: "白" },
           { id: "gold",  hex: "#f5b942", label: "金" },
@@ -611,10 +792,31 @@
         /* Access is split by path only: participants are handed the
            #post path and never see the settings; the committee uses the
            secret admin path, which is not distributed to participants. */
-        /* Identity of "me" for this open page only (kept in memory, never
-           saved): comments posted in this session carry this owner id,
-           and only those can be edited / deleted in participant mode. */
-        var sessionId = "u-" + Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
+        /* Identity of "me": comments posted from this browser carry this
+           owner id, and only those can be edited / deleted in participant
+           mode. The id is an anonymous random token kept in this browser
+           (localStorage) so that reloading / reopening the page does not
+           lose ownership of your own posts — previously it was kept only
+           in memory, so a refresh made your own posts uneditable. It
+           contains no personal information; clearing the browser's site
+           data resets it (posts made before this fix keep their old
+           one-time ids and can still be managed by an admin). */
+        var OWNER_KEY = "bounenkai2026_owner_id_v1";
+        var sessionId = (function () {
+          var fallback = "u-" + Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
+          try {
+            var saved = window.localStorage.getItem(OWNER_KEY);
+            if (saved && /^u-[a-z0-9]+$/.test(saved)) return saved;
+            window.localStorage.setItem(OWNER_KEY, fallback);
+            return fallback;
+          } catch (e) {
+            return fallback;
+          }
+        })();
+        var NAME_KEY = "bounenkai2026_name_v1";
+        var QR_SIZE_KEY = "bounenkai2026_qr_size_v1";
+        function saveLocal(key, value) { try { window.localStorage.setItem(key, value); } catch (e) {} }
+        function loadLocal(key) { try { return window.localStorage.getItem(key); } catch (e) { return null; } }
 
         /* The admin path itself is never embedded in this page: only its
            SHA-256 hash is kept here, and the URL fragment is hashed in the
@@ -646,6 +848,8 @@
           speed: 1,
           fsClass: "fs-mid",
           color: "white",
+          topic: "",
+          qrSize: (function () { var v = parseInt(loadLocal(QR_SIZE_KEY) || "", 10); return (v >= 72 && v <= 260) ? v : 104; })(),
           spotIndex: 0,
           spotElapsed: 0,
           nextId: 1,
@@ -662,6 +866,7 @@
         var stage = document.getElementById("stage");
         var flowLayer = document.getElementById("flowLayer");
         var spotCard = document.getElementById("spotCard");
+        var spotTopic = document.getElementById("spotTopic");
         var spotName = document.getElementById("spotName");
         var spotText = document.getElementById("spotText");
         var spotBar = document.getElementById("spotBar");
@@ -710,9 +915,15 @@
             var nm = document.createElement("span");
             nm.className = "fname";
             nm.textContent = c.name;
+            el.appendChild(nm);
+            if (topicLabel(c.topic)) {
+              var tp = document.createElement("span");
+              tp.className = "ftopic";
+              tp.textContent = "お題｜" + topicLabel(c.topic);
+              el.appendChild(tp);
+            }
             var tx = document.createElement("span");
             tx.textContent = c.text;
-            el.appendChild(nm);
             el.appendChild(tx);
             flowLayer.appendChild(el);
             var w = el.offsetWidth || 200;
@@ -770,6 +981,9 @@
           if (!state.comments.length) return;
           if (state.spotIndex >= state.comments.length) state.spotIndex = 0;
           var c = state.comments[state.spotIndex];
+          var tl = topicLabel(c.topic);
+          spotTopic.textContent = tl ? "お題：" + tl : "";
+          spotTopic.classList.toggle("show", !!tl);
           spotName.textContent = c.name;
           spotText.textContent = c.text;
           spotText.style.color = colorHex(c.color);
@@ -798,6 +1012,12 @@
             var nm = document.createElement("div");
             nm.className = "cname";
             nm.textContent = c.name;
+            if (topicLabel(c.topic)) {
+              var tbadge = document.createElement("span");
+              tbadge.className = "topic-badge";
+              tbadge.textContent = "お題：" + topicLabel(c.topic);
+              nm.appendChild(tbadge);
+            }
             var mine = c.ownerId === sessionId;
             if (mine) {
               var badge = document.createElement("span");
@@ -911,12 +1131,13 @@
           fbMsg.className = "fb-msg" + (cls ? " " + cls : "");
         }
 
-        function addComment(name, text, color) {
+        function addComment(name, text, color, topic) {
           if (state.useFirebase && commentsRef) {
             commentsRef.add({
               name: name || "ゲスト",
               text: text,
               color: color || state.color,
+              topic: topic || "",
               ownerId: sessionId,
               order: Date.now(),
               createdAt: firebase.firestore.FieldValue.serverTimestamp()
@@ -924,7 +1145,7 @@
               .catch(function () { toast("送信に失敗しました。時間をおいてもう一度お試しください"); });
             return;
           }
-          var c = { id: "local-" + (state.nextId++), name: name || "ゲスト", text: text, color: color || state.color, ownerId: sessionId };
+          var c = { id: "local-" + (state.nextId++), name: name || "ゲスト", text: text, color: color || state.color, topic: topic || "", ownerId: sessionId };
           state.comments.push(c);
           state.hasSamples = false;
           refreshStage();
@@ -1014,7 +1235,8 @@
               playing: state.playing,
               mode: state.mode,
               speed: state.speed,
-              fsClass: state.fsClass
+              fsClass: state.fsClass,
+              qrSize: state.qrSize
             }, { merge: true }).catch(function () { /* keep local state even if the write fails */ });
           }, 120);
         }
@@ -1030,6 +1252,7 @@
             speedVal.textContent = formatSpeed(s.speed);
           }
           if (s.fsClass && s.fsClass !== state.fsClass) setFsUI(s.fsClass);
+          if (typeof s.qrSize === "number") setQrSizeUI(s.qrSize);
           state.applyingRemoteSettings = false;
         }
 
@@ -1075,6 +1298,7 @@
                 name: v.name || "ゲスト",
                 text: v.text || "",
                 color: v.color || "white",
+                topic: v.topic || "",
                 ownerId: v.ownerId || "",
                 order: v.order || 0
               });
@@ -1188,6 +1412,36 @@
           });
         });
 
+        /* ---------- QR code size (freely adjustable) ---------- */
+        var qrSizeInput = document.getElementById("qrSize");
+        var qrSizeVal = document.getElementById("qrSizeVal");
+        var qrSizeInBox = document.getElementById("qrSizeInBox");
+        var qrSizeValBox = document.getElementById("qrSizeValBox");
+        function clampQrSize(px) {
+          var v = Math.round(Number(px) || 104);
+          return Math.max(72, Math.min(260, v));
+        }
+        function setQrSizeUI(px) {
+          var v = clampQrSize(px);
+          state.qrSize = v;
+          stage.style.setProperty("--qr-size", v + "px");
+          if (qrSizeInput) qrSizeInput.value = v;
+          if (qrSizeVal) qrSizeVal.textContent = v + "px";
+          if (qrSizeInBox) qrSizeInBox.value = v;
+          if (qrSizeValBox) qrSizeValBox.textContent = v + "px";
+          saveLocal(QR_SIZE_KEY, String(v));
+        }
+        function setQrSize(px) { setQrSizeUI(px); pushSettings(); }
+        if (qrSizeInput) qrSizeInput.addEventListener("input", function () {
+          if (!isAdmin()) { qrSizeInput.value = state.qrSize; toast("設定を変更できるのは管理者（実行委員）だけです"); return; }
+          setQrSize(parseFloat(qrSizeInput.value));
+        });
+        if (qrSizeInBox) qrSizeInBox.addEventListener("input", function () { setQrSizeUI(parseFloat(qrSizeInBox.value)); if (isAdmin()) pushSettings(); });
+        var qrMinus = document.getElementById("qrMinus");
+        var qrPlus = document.getElementById("qrPlus");
+        if (qrMinus) qrMinus.addEventListener("click", function () { setQrSizeUI(state.qrSize - 16); if (isAdmin()) pushSettings(); });
+        if (qrPlus) qrPlus.addEventListener("click", function () { setQrSizeUI(state.qrSize + 16); if (isAdmin()) pushSettings(); });
+
         document.getElementById("fsBtn").addEventListener("click", function () {
           if (!guardAdmin()) return;
           try {
@@ -1208,6 +1462,17 @@
         });
 
         /* ================= Form ================= */
+        var topicChips = document.querySelectorAll("#topicRow .topic-chip");
+        topicChips.forEach(function (chip) {
+          chip.addEventListener("click", function () {
+            state.topic = chip.getAttribute("data-topic") || "";
+            topicChips.forEach(function (x) { x.setAttribute("aria-pressed", x === chip ? "true" : "false"); });
+            textInput.placeholder = state.topic === TOPIC_ID
+              ? "例：AIが幹事をやってくれるようになる！"
+              : "例：今年もお疲れさまでした！";
+          });
+        });
+
         var colorRow = document.getElementById("colorRow");
         COLORS.forEach(function (col) {
           var b = document.createElement("button");
@@ -1226,6 +1491,16 @@
           colorRow.appendChild(b);
         });
 
+        /* Keep the typed name across reloads (same browser), so a refresh
+           does not clear the form either. */
+        var nameInputEl = document.getElementById("nameInput");
+        if (nameInputEl) {
+          var savedName = loadLocal(NAME_KEY);
+          if (savedName) nameInputEl.value = savedName;
+          nameInputEl.addEventListener("input", function () { saveLocal(NAME_KEY, nameInputEl.value.trim()); });
+          nameInputEl.addEventListener("change", function () { saveLocal(NAME_KEY, nameInputEl.value.trim()); });
+        }
+
         var textInput = document.getElementById("textInput");
         var charCount = document.getElementById("charCount");
         textInput.addEventListener("input", function () { charCount.textContent = textInput.value.length; });
@@ -1235,12 +1510,55 @@
           var text = textInput.value.trim();
           if (!text) { toast("コメントを入力してください"); textInput.focus(); return; }
           var name = document.getElementById("nameInput").value.trim();
-          addComment(name, text, state.color);
+          addComment(name, text, state.color, state.topic);
           textInput.value = "";
           charCount.textContent = "0";
           textInput.focus();
         });
 
+        function csvEscape(value) {
+          var s = value == null ? "" : String(value);
+          return '"' + s.replace(/"/g, '""') + '"';
+        }
+        function colorLabel(id) {
+          for (var i = 0; i < COLORS.length; i++) if (COLORS[i].id === id) return COLORS[i].label;
+          return id || "";
+        }
+        function exportCommentsCsv() {
+          if (!state.comments.length) {
+            toast("出力するコメントがありません");
+            return;
+          }
+          var lines = [];
+          lines.push([csvEscape("No."), csvEscape("名前"), csvEscape("お題"), csvEscape("コメント"), csvEscape("文字の色")].join(","));
+          state.comments.forEach(function (c, idx) {
+            lines.push([
+              csvEscape(idx + 1),
+              csvEscape(c.name || "ゲスト"),
+              csvEscape(topicLabel(c.topic) || "自由コメント"),
+              csvEscape(c.text || ""),
+              csvEscape(colorLabel(c.color))
+            ].join(","));
+          });
+          var csv = "\uFEFF" + lines.join("\r\n") + "\r\n";
+          var blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+          var url = URL.createObjectURL(blob);
+          var now = new Date();
+          function pad(n) { return ("0" + n).slice(-2); }
+          var stamp = now.getFullYear() + pad(now.getMonth() + 1) + pad(now.getDate()) + "_" + pad(now.getHours()) + pad(now.getMinutes()) + pad(now.getSeconds());
+          var a = document.createElement("a");
+          a.href = url;
+          a.download = "忘年会2026_コメント一覧_" + stamp + ".csv";
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+          toast("コメント一覧をCSVで出力しました（" + state.comments.length + "件）");
+        }
+        document.getElementById("csvBtn").addEventListener("click", function () {
+          if (!guardAdmin()) return;
+          exportCommentsCsv();
+        });
         document.getElementById("clearBtn").addEventListener("click", function () {
           if (!guardAdmin()) return;
           clearAllComments();
@@ -1289,10 +1607,38 @@
           resolveRole();
         });
 
+        /* ================= QR code (fullscreen stage) ================= */
+        (function renderQr() {
+          var el = document.getElementById("qrCode");
+          if (!el) return;
+          if (typeof QRCode !== "undefined" && QRCode.CorrectLevel) {
+            try {
+              /* Rendered large and scaled by CSS (--qr-size) so any
+                 chosen size stays sharp without regenerating. */
+              new QRCode(el, {
+                text: POST_URL,
+                width: 480,
+                height: 480,
+                colorDark: "#000000",
+                colorLight: "#ffffff",
+                correctLevel: QRCode.CorrectLevel.M
+              });
+              return;
+            } catch (e) { /* fall through to the image fallback */ }
+          }
+          var img = document.createElement("img");
+          img.alt = "投稿用画面へのQRコード";
+          img.width = 480;
+          img.height = 480;
+          img.src = "https://api.qrserver.com/v1/create-qr-code/?size=480x480&margin=6&data=" + encodeURIComponent(POST_URL);
+          el.appendChild(img);
+        })();
+
         /* ================= Init ================= */
         loadSamples();
         refreshStage();
         resolveRole();
+        setQrSizeUI(state.qrSize);
         setPlayingUI(true);
         requestAnimationFrame(tick);
         if (FIREBASE_CONFIG) {
