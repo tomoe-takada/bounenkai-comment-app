@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="color-scheme" content="light dark" />
     <link rel="icon" href="data:," />
-    <title>忘年会コメントループ</title>
+    <title>忘年会2026</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;500;700;800&family=Zen+Maru+Gothic:wght@700;900&display=swap" rel="stylesheet" />
@@ -358,6 +358,17 @@
       }
       body:not(.is-admin-unlocked) .controls { display: none; }
       body:not(.is-admin-unlocked) .list-actions { display: none; }
+      body:not(.is-admin-unlocked) .conn-status { display: none; }
+      body:not(.is-admin-unlocked) .rolebar { display: none; }
+      .privacy-note {
+        margin: 0 0 14px; font-size: 13px; line-height: 1.65; font-weight: 700;
+        background: #fdf0d7; border: 1px solid #e9c88a; border-radius: 10px;
+        padding: 10px 12px; color: var(--ink);
+      }
+      .privacy-note b { color: var(--accent); }
+      @media (prefers-color-scheme: dark) {
+        .privacy-note { background: #3a2d16; border-color: #6b5322; }
+      }
       body.is-participant .howto { display: none; }
       body:not(.is-admin-unlocked) #fbPanel { display: none; }
       .admin-only-note { display: none; }
@@ -494,6 +505,7 @@
         <section class="panel" aria-labelledby="postH">
           <h2 id="postH">コメントを投稿</h2>
           <p class="hint" id="postHint">投稿すると、すぐにスクリーンのループに加わります。</p>
+          <p class="privacy-note"><b>ご注意：</b>投稿したコメントはスクリーンに大きく表示され、参加者全員が見ることができます。個人情報・パスワード・機密情報など、公開されて困る内容は入力しないでください。</p>
 
           <form id="postForm">
             <label class="field">
@@ -521,7 +533,7 @@
             <span class="count-badge"><span id="listCount">0</span>件</span>
           </div>
           <p class="hint" id="listHint">編集・削除できるのは自分の投稿だけです。</p>
-          <div class="sample-note" id="sampleNote">いま表示されているのは動作確認用のサンプルコメントです（Firebase未接続のこの端末内だけの表示）。Firebaseに接続すると全員の投稿が共有されます。本番前は管理者モードで全消ししてください。</div>
+          <div class="sample-note" id="sampleNote">いま表示されているのは動作確認用のサンプルコメントです（この端末内だけの表示）。本番前は管理者モードで全消ししてください。</div>
           <ul class="comments" id="commentList"></ul>
           <div class="list-empty" id="listEmpty">コメントはありません。フォームから投稿すると、ここに追加されます。</div>
           <div class="list-actions">
@@ -531,60 +543,13 @@
         </section>
       </div>
 
-      <!-- ===== Firebase connection (admin only) ===== -->
-      <section class="fb-panel" id="fbPanel" aria-labelledby="fbH">
-        <h2 id="fbH">Firebase接続（全員のスマホと共有）</h2>
-        <p class="hint">Firebaseの Cloud Firestore に接続すると、約150人それぞれのスマホからの投稿が1つのスクリーンにリアルタイムで集まります。同時接続数の上限がないため150人規模でも使え、無料枠（Sparkプラン）で足ります。</p>
-        <ol class="fb-steps">
-          <li><a href="https://console.firebase.google.com/" target="_blank" rel="noopener">Firebaseコンソール</a>でプロジェクトを作成する（名前は自由、GoogleアナリティクスはオフでOK）</li>
-          <li>左メニュー「構築 → Firestore Database」でデータベースを作成する。場所は <b>asia-northeast1（東京）</b>、<b>本番環境モード</b>で開始する</li>
-          <li>Firestoreの「ルール」タブに、下記のルールを貼り付けて公開する（本番環境モードの初期ルールは全拒否のため、この変更が必須です）</li>
-          <li>プロジェクトの概要画面で Webアプリ（&lt;/&gt;）を登録すると表示される <b>firebaseConfig</b> をコピーする</li>
-          <li>下の欄に貼り付けて「Firebaseに接続」を押す（この画面での動作確認用）</li>
-          <li><b>本番（GitHub Pages）では必須：</b>下の「設定入りHTMLをダウンロード」で、設定を埋め込んだ完成品HTMLを保存し、それをGitHub Pagesへアップロードする。全員のスマホはその設定で開いた瞬間に自動接続します</li>
-        </ol>
-        <label class="field" style="margin-bottom:0;">
-          <span>firebaseConfig（JSON形式で貼り付け）</span>
-          <textarea class="fb-config" id="fbConfigInput" spellcheck="false" placeholder='{
-  "apiKey": "…",
-  "authDomain": "….firebaseapp.com",
-  "projectId": "…",
-  "storageBucket": "….appspot.com",
-  "messagingSenderId": "…",
-  "appId": "…"
-}'></textarea>
-        </label>
-        <div class="fb-actions">
-          <button class="btn primary" id="fbConnectBtn" type="button">Firebaseに接続</button>
-          <button class="btn" id="fbDownloadBtn" type="button">設定入りHTMLをダウンロード（本番用）</button>
-          <button class="btn" id="fbDisconnectBtn" type="button">切断してこの端末のみに戻す</button>
-          <span class="fb-msg" id="fbMsg" role="status"></span>
-        </div>
-        <p class="hint" style="margin:12px 0 0;">Firestoreの「ルール」タブに下記を貼り付けてください。コメントと表示設定だけを公開で読み書きできるようにするルールです。イベント専用プロジェクトとして使い、終了後はプロジェクトごと削除する前提です。開催日が決まっている場合は、2行目の期限（2027年1月31日）を当日の翌日などに変えると、その日時を過ぎたら自動で書き込みが止まります。</p>
-        <div class="fb-rules">rules_version = '2';
-service cloud.firestore {
-  match /databases/{database}/documents {
-    function inEventPeriod() {
-      return request.time &lt; timestamp.date(2027, 1, 31);
-    }
-    match /comments/{commentId} {
-      allow read: if true;
-      allow create, update, delete: if inEventPeriod();
-    }
-    match /settings/{docId} {
-      allow read: if true;
-      allow write: if inEventPeriod();
-    }
-  }
-}</div>
-      </section>
 
       <section class="howto" aria-labelledby="howtoH">
         <h2 id="howtoH">当日の使い方（パス分けと権限）</h2>
         <ol>
-          <li><b>事前準備</b>：上の「Firebase接続」の手順で設定を済ませ、「設定入りHTMLをダウンロード」で作った完成品をGitHub Pagesに公開する</li>
-          <li><b>参加者には投稿専用のURL</b>をQRコードなどで配布する。参加者はコメント投稿のみ可能で、再生・速度・文字サイズなどの設定は一切表示されません。投稿はFirebase経由で全端末に即時反映されます</li>
-          <li><b>管理者用パス</b>（実行委員だけに別途共有したランダム16桁のパス）は参加者には配布しない。このパスで開くと設定変更と全コメントの管理が使えます（設定変更もFirebase経由で投影画面に同期します）。ページのソースにはパスのハッシュ値だけを保持し、パスそのものは埋め込んでいません</li>
+          <li><b>事前準備</b>：完成品のHTMLをGitHub Pagesに公開する</li>
+          <li><b>参加者には投稿専用のURL</b>をQRコードなどで配布する。参加者はコメント投稿のみ可能で、再生・速度・文字サイズなどの設定は一切表示されません。投稿は全端末に即時反映されます</li>
+          <li><b>管理者用パス</b>（実行委員だけに別途共有したランダム16桁のパス）は参加者には配布しない。このパスで開くと設定変更と全コメントの管理が使えます（設定変更も投影画面に同期します）。ページのソースにはパスのハッシュ値だけを保持し、パスそのものは埋め込んでいません</li>
           <li>参加者は<b>自分が投稿したコメントだけ</b>、右側の「編集」「削除」から直せます。他の人の投稿は見るだけです（同じスマホ・同じ表示のあいだだけ「自分の投稿」と判定します）</li>
           <li>幹事のPCでは管理者モードで開き、<b>「スクリーンを全画面に」</b>でプロジェクターに投影する</li>
         </ol>
@@ -941,6 +906,7 @@ service cloud.firestore {
           connLabel.textContent = label;
         }
         function setFbMsg(text, cls) {
+          if (!fbMsg) return;
           fbMsg.textContent = text || "";
           fbMsg.className = "fb-msg" + (cls ? " " + cls : "");
         }
@@ -955,7 +921,7 @@ service cloud.firestore {
               order: Date.now(),
               createdAt: firebase.firestore.FieldValue.serverTimestamp()
             }).then(function () { toast("コメントをスクリーンに送りました"); })
-              .catch(function () { toast("送信に失敗しました。接続とFirestoreのルールを確認してください"); });
+              .catch(function () { toast("送信に失敗しました。時間をおいてもう一度お試しください"); });
             return;
           }
           var c = { id: "local-" + (state.nextId++), name: name || "ゲスト", text: text, color: color || state.color, ownerId: sessionId };
@@ -1118,7 +1084,7 @@ service cloud.firestore {
             setConnStatus("live", "Firestore接続中（全員で共有）");
             if (firstSnapshot) {
               firstSnapshot = false;
-              setFbMsg("接続しました。参加者のスマホからの投稿がここに集まります。本番公開時は「設定入りHTMLをダウンロード」で完成品を作ってGitHub Pagesへアップロードしてください。", "ok");
+              setFbMsg("接続しました。参加者のスマホからの投稿がここに集まります。", "ok");
               if (!fromAuto) toast("Firebaseに接続しました");
             }
             refreshFromRemote();
@@ -1284,62 +1250,6 @@ service cloud.firestore {
           shuffleComments();
         });
 
-        /* ================= Firebase panel (admin) ================= */
-        var fbConfigInput = document.getElementById("fbConfigInput");
-        function parseConfigInput() {
-          var raw = fbConfigInput.value.trim();
-          if (!raw) { setFbMsg("firebaseConfig を貼り付けてください。", "err"); return null; }
-          /* Accept a bare object, JSON, or the full `const firebaseConfig = {…};` snippet from the console. */
-          var open = raw.indexOf("{"), close = raw.lastIndexOf("}");
-          if (open > 0 && close > open) raw = raw.slice(open, close + 1);
-          var cfg = null;
-          try { cfg = JSON.parse(raw); }
-          catch (e) {
-            try {
-              var normalized = raw
-                .replace(/([{,]\s*)([A-Za-z0-9_]+)\s*:/g, '$1"$2":')
-                .replace(/'/g, '"')
-                .replace(/,\s*}/g, "}");
-              cfg = JSON.parse(normalized);
-            } catch (e2) { cfg = null; }
-          }
-          if (!cfg || !cfg.projectId || !cfg.apiKey) {
-            setFbMsg("設定を読み取れませんでした。projectId と apiKey を含む firebaseConfig の { } の中身ごと貼り付けてください。", "err");
-            return null;
-          }
-          return cfg;
-        }
-        document.getElementById("fbConnectBtn").addEventListener("click", function () {
-          var cfg = parseConfigInput();
-          if (cfg) connectFirebase(cfg, false);
-        });
-        /* Build the production file: this page's own source with the pasted
-           config baked into FIREBASE_CONFIG, so every participant phone
-           auto-connects to the same database on open. */
-        document.getElementById("fbDownloadBtn").addEventListener("click", function () {
-          var cfg = parseConfigInput();
-          if (!cfg) return;
-          var src = "<!doctype html>\n" + document.documentElement.outerHTML;
-          if (src.indexOf("var FIREBASE_CONFIG = null;") === -1 && !/var FIREBASE_CONFIG = \{/.test(src)) {
-            setFbMsg("この画面からは設定入りHTMLを作れませんでした。書き出したHTML内の FIREBASE_CONFIG に直接貼り付けてください。", "err");
-            return;
-          }
-          src = src.replace(/var FIREBASE_CONFIG = (null|\{[\s\S]*?\});/, "var FIREBASE_CONFIG = " + JSON.stringify(cfg, null, 2) + ";");
-          src = src.replace(/<body[^>]*>/, "<body>");
-          var blob = new Blob([src], { type: "text/html;charset=utf-8" });
-          var a = document.createElement("a");
-          a.href = URL.createObjectURL(blob);
-          a.download = "index.html";
-          document.body.appendChild(a);
-          a.click();
-          setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 400);
-          setFbMsg("設定入りHTMLをダウンロードしました。この index.html をGitHub Pagesへアップロードすれば、全員のスマホが自動でFirebaseに接続します。", "ok");
-        });
-        document.getElementById("fbDisconnectBtn").addEventListener("click", function () {
-          disconnectFirebase(false);
-          toast("Firebaseから切断しました");
-        });
-
         var resizeTimer = null;
         window.addEventListener("resize", function () {
           if (resizeTimer) clearTimeout(resizeTimer);
@@ -1386,7 +1296,6 @@ service cloud.firestore {
         setPlayingUI(true);
         requestAnimationFrame(tick);
         if (FIREBASE_CONFIG) {
-          fbConfigInput.value = JSON.stringify(FIREBASE_CONFIG, null, 2);
           connectFirebase(FIREBASE_CONFIG, true);
         }
       })();
