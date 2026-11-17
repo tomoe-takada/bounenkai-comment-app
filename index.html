@@ -1,0 +1,1395 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="color-scheme" content="light dark" />
+    <link rel="icon" href="data:," />
+    <title>忘年会コメントループ</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;500;700;800&family=Zen+Maru+Gothic:wght@700;900&display=swap" rel="stylesheet" />
+    <style>
+      button, [role="button"], select, summary, input:not([type="checkbox"], [type="radio"]) { min-height: 2.25rem; }
+
+      :root {
+        --bg: #faf6ef;
+        --surface: #ffffff;
+        --surface-2: #f3ecdf;
+        --ink: #2b2118;
+        --ink-soft: #6f6151;
+        --line: #e3d7c3;
+        --accent: #d93a2b;
+        --accent-ink: #ffffff;
+        --gold: #e9a13b;
+        --gold-soft: #fdf0d7;
+        --stage-bg: #101319;
+        --stage-line: #2a2f3a;
+        --ok: #2e7d4f;
+        --shadow: 0 10px 30px rgba(80, 55, 20, .10);
+        --radius: 14px;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #17140f;
+          --surface: #221e17;
+          --surface-2: #2b261d;
+          --ink: #f3ead9;
+          --ink-soft: #b3a68d;
+          --line: #3d362a;
+          --accent: #e8543f;
+          --gold-soft: #3a2d16;
+          --shadow: 0 10px 30px rgba(0,0,0,.35);
+        }
+      }
+
+      * { box-sizing: border-box; }
+      html, body { margin: 0; padding: 0; }
+      body {
+        background: var(--bg);
+        color: var(--ink);
+        font-family: "M PLUS Rounded 1c", "Hiragino Maru Gothic ProN", "Hiragino Sans", sans-serif;
+        -webkit-font-smoothing: antialiased;
+      }
+      .wrap { max-width: 1180px; margin: 0 auto; padding: 14px 16px 48px; }
+
+      /* ---------- Stage (projector screen) ---------- */
+      .stage {
+        position: relative;
+        background: var(--stage-bg);
+        border-radius: 18px;
+        overflow: hidden;
+        height: min(62vh, 560px);
+        min-height: 340px;
+        box-shadow: var(--shadow);
+        isolation: isolate;
+      }
+      .stage:fullscreen { border-radius: 0; height: 100%; }
+      .stage::before {
+        content: "";
+        position: absolute; inset: 0;
+        background:
+          radial-gradient(60% 50% at 50% 0%, rgba(233,161,59,.14), transparent 70%),
+          radial-gradient(40% 35% at 85% 100%, rgba(217,58,43,.10), transparent 70%);
+        pointer-events: none;
+      }
+      .stage-frame {
+        position: absolute; inset: 10px;
+        border: 1px solid var(--stage-line);
+        border-radius: 10px;
+        pointer-events: none;
+      }
+      .stage-head {
+        position: absolute; top: 0; left: 0; right: 0;
+        display: flex; align-items: center; justify-content: space-between;
+        padding: 16px 22px;
+        pointer-events: none;
+        z-index: 5;
+      }
+      .stage-title {
+        font-family: "Zen Maru Gothic", "M PLUS Rounded 1c", sans-serif;
+        font-weight: 900;
+        color: #f5eeda;
+        font-size: clamp(17px, 2.4vw, 26px);
+        letter-spacing: .06em;
+        text-shadow: 0 2px 12px rgba(0,0,0,.6);
+      }
+      .stage-title .year { color: var(--gold); }
+      .stage-meta {
+        display: flex; align-items: center; gap: 10px;
+        color: #cfc7b4; font-size: 13px; font-weight: 700;
+      }
+      .live-dot {
+        width: 9px; height: 9px; border-radius: 50%;
+        background: #ff5340;
+        box-shadow: 0 0 0 0 rgba(255,83,64,.6);
+        animation: pulse 1.8s infinite;
+      }
+      .live-dot.paused { background: #8a8f98; animation: none; box-shadow: none; }
+      @keyframes pulse {
+        0% { box-shadow: 0 0 0 0 rgba(255,83,64,.55); }
+        70% { box-shadow: 0 0 0 9px rgba(255,83,64,0); }
+        100% { box-shadow: 0 0 0 0 rgba(255,83,64,0); }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .live-dot { animation: none; }
+      }
+
+      /* flowing comments */
+      .flow-layer { position: absolute; inset: 0; overflow: hidden; z-index: 2; }
+      .flow-item {
+        position: absolute; left: 0; top: 0;
+        white-space: nowrap;
+        font-weight: 800;
+        line-height: 1.25;
+        text-shadow: 0 2px 10px rgba(0,0,0,.75), 0 0 2px rgba(0,0,0,.9);
+        will-change: transform;
+        padding-right: .4em;
+      }
+      .flow-item .fname {
+        font-size: .52em; font-weight: 700; opacity: .75;
+        margin-right: .7em; vertical-align: .35em;
+      }
+      .stage.fs-small { --cfs: 22px; }
+      .stage.fs-mid   { --cfs: 30px; }
+      .stage.fs-large { --cfs: 40px; }
+      .flow-item { font-size: var(--cfs, 30px); }
+
+      /* spotlight mode */
+      .spot-layer {
+        position: absolute; inset: 0; z-index: 3;
+        display: none;
+        align-items: center; justify-content: center;
+        text-align: center; padding: 70px 30px 56px;
+      }
+      .stage.mode-spot .spot-layer { display: flex; }
+      .stage.mode-spot .flow-layer { display: none; }
+      .spot-card { max-width: 900px; }
+      .spot-name {
+        color: var(--gold); font-weight: 800;
+        font-size: clamp(15px, 2vw, 22px);
+        letter-spacing: .12em; margin-bottom: 14px;
+      }
+      .spot-text {
+        color: #fdf8ec; font-weight: 800;
+        font-size: calc(var(--cfs, 30px) * 1.55);
+        line-height: 1.45;
+        text-shadow: 0 3px 18px rgba(0,0,0,.7);
+        overflow-wrap: anywhere;
+      }
+      .spot-card.enter { animation: spotIn .45s ease both; }
+      @keyframes spotIn {
+        from { opacity: 0; transform: translateY(16px) scale(.98); }
+        to   { opacity: 1; transform: translateY(0) scale(1); }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .spot-card.enter { animation: none; }
+      }
+      .spot-progress {
+        position: absolute; left: 22px; right: 22px; bottom: 18px;
+        height: 4px; border-radius: 2px;
+        background: rgba(255,255,255,.14);
+        overflow: hidden; display: none; z-index: 4;
+      }
+      .stage.mode-spot .spot-progress { display: block; }
+      .spot-progress > div {
+        height: 100%; width: 0%;
+        background: var(--gold); border-radius: 2px;
+      }
+      .stage-empty {
+        position: absolute; inset: 0; z-index: 2;
+        display: none; align-items: center; justify-content: center;
+        color: #9aa0ab; font-weight: 700; font-size: 17px;
+        text-align: center; padding: 20px;
+      }
+      .stage.is-empty .stage-empty { display: flex; }
+      .stage.is-empty .flow-layer, .stage.is-empty .spot-layer { display: none; }
+
+      /* ---------- Control bar ---------- */
+      .controls {
+        display: flex; flex-wrap: wrap; align-items: center; gap: 10px;
+        margin-top: 12px;
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        padding: 10px 12px;
+        box-shadow: var(--shadow);
+      }
+      .btn {
+        appearance: none; border: 1px solid var(--line);
+        background: var(--surface-2); color: var(--ink);
+        font: inherit; font-weight: 700; font-size: 14px;
+        border-radius: 10px; padding: 8px 14px;
+        cursor: pointer; display: inline-flex; align-items: center; gap: 7px;
+        min-height: 40px;
+      }
+      .btn:hover { filter: brightness(1.04); }
+      .btn:focus-visible, input:focus-visible, .seg button:focus-visible, textarea:focus-visible {
+        outline: 3px solid var(--gold); outline-offset: 2px;
+      }
+      .btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+      .btn:disabled { opacity: .55; cursor: wait; }
+      .btn svg { width: 17px; height: 17px; flex: none; }
+      .seg {
+        display: inline-flex; border: 1px solid var(--line);
+        border-radius: 10px; overflow: hidden; background: var(--surface-2);
+      }
+      .seg button {
+        appearance: none; border: 0; background: transparent; color: var(--ink-soft);
+        font: inherit; font-weight: 700; font-size: 14px;
+        padding: 8px 14px; cursor: pointer; min-height: 40px;
+      }
+      .seg button[aria-pressed="true"] { background: var(--ink); color: var(--bg); }
+      .ctl-label { font-size: 12px; font-weight: 700; color: var(--ink-soft); letter-spacing: .05em; }
+      .ctl-group { display: inline-flex; align-items: center; gap: 8px; }
+      input[type="range"] { width: 110px; accent-color: var(--accent); min-height: 40px; }
+      .speed-val { font-weight: 800; font-size: 14px; min-width: 3.2em; }
+      .spacer { flex: 1; }
+
+      /* ---------- Panels ---------- */
+      .panels {
+        display: grid; grid-template-columns: 1fr 1fr;
+        gap: 14px; margin-top: 14px; align-items: start;
+      }
+      @media (max-width: 760px) {
+        .panels { grid-template-columns: 1fr; }
+        .stage { height: 52vh; min-height: 300px; }
+      }
+      .panel {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        box-shadow: var(--shadow);
+        padding: 18px;
+      }
+      .panel h2 {
+        margin: 0 0 4px; font-size: 17px; font-weight: 800;
+        font-family: "Zen Maru Gothic", "M PLUS Rounded 1c", sans-serif;
+        letter-spacing: .03em;
+      }
+      .panel .hint { margin: 0 0 14px; font-size: 13px; color: var(--ink-soft); line-height: 1.6; }
+      label.field { display: block; margin-bottom: 12px; }
+      label.field span { display: block; font-size: 13px; font-weight: 700; margin-bottom: 6px; }
+      label.field span .opt { color: var(--ink-soft); font-weight: 500; font-size: 12px; }
+      input[type="text"], textarea {
+        width: 100%; font: inherit; font-size: 16px;
+        background: var(--bg); color: var(--ink);
+        border: 1px solid var(--line); border-radius: 10px;
+        padding: 10px 12px;
+      }
+      textarea { resize: vertical; min-height: 64px; line-height: 1.5; }
+      .colors { display: flex; gap: 8px; flex-wrap: wrap; margin: 2px 0 14px; }
+      .color-chip {
+        width: 40px; height: 40px; border-radius: 50%;
+        border: 3px solid transparent; cursor: pointer; padding: 0;
+        background: var(--stage-bg);
+        display: inline-flex; align-items: center; justify-content: center;
+      }
+      .color-chip i {
+        width: 24px; height: 24px; border-radius: 50%; display: block;
+        border: 1px solid rgba(128,128,128,.35);
+      }
+      .color-chip[aria-pressed="true"] { border-color: var(--accent); }
+      .submit-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+      .char-count { font-size: 12px; color: var(--ink-soft); }
+
+      /* comment list */
+      .list-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+      .count-badge {
+        background: var(--accent); color: #fff; font-weight: 800;
+        border-radius: 999px; padding: 2px 11px; font-size: 13px;
+      }
+      .sample-note {
+        display: none; font-size: 12.5px; color: var(--ink-soft);
+        background: var(--gold-soft); border-radius: 8px;
+        padding: 7px 10px; margin-bottom: 10px; line-height: 1.55;
+      }
+      .sample-note.show { display: block; }
+      ul.comments { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+      ul.comments li {
+        display: flex; align-items: center; gap: 10px;
+        background: var(--bg); border: 1px solid var(--line);
+        border-radius: 10px; padding: 8px 8px 8px 12px;
+      }
+      ul.comments .dot { width: 12px; height: 12px; border-radius: 50%; flex: none; border: 1px solid rgba(128,128,128,.4); }
+      ul.comments .body { flex: 1; min-width: 0; }
+      ul.comments .cname { font-size: 12px; font-weight: 700; color: var(--ink-soft); }
+      ul.comments .ctext { font-size: 15px; font-weight: 700; overflow-wrap: anywhere; line-height: 1.45; }
+      ul.comments .del {
+        appearance: none; border: 0; background: transparent; cursor: pointer;
+        color: var(--ink-soft); width: 40px; height: 40px; flex: none;
+        border-radius: 8px; display: inline-flex; align-items: center; justify-content: center;
+      }
+      ul.comments .del:hover { background: var(--surface-2); color: var(--accent); }
+      ul.comments .del svg { width: 18px; height: 18px; }
+      .list-empty { color: var(--ink-soft); font-size: 14px; padding: 14px 4px; display: none; }
+      .list-empty.show { display: block; }
+      .list-actions { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+      .btn.small { min-height: 38px; font-size: 13px; padding: 6px 12px; }
+      .btn.danger { color: var(--accent); }
+
+      .howto {
+        margin-top: 14px; background: var(--surface);
+        border: 1px solid var(--line); border-radius: var(--radius);
+        padding: 16px 18px; box-shadow: var(--shadow);
+      }
+      .howto h2 { margin: 0 0 8px; font-size: 15px; font-weight: 800; font-family: "Zen Maru Gothic", sans-serif; }
+      .howto ol { margin: 0; padding-left: 1.3em; font-size: 13.5px; line-height: 1.9; color: var(--ink-soft); }
+      .howto ol b { color: var(--ink); }
+      .howto code { background: var(--surface-2); border: 1px solid var(--line); border-radius: 6px; padding: 1px 6px; font-family: ui-monospace, monospace; font-size: 12px; color: var(--ink); overflow-wrap: anywhere; }
+
+      .toast {
+        position: fixed; left: 50%; bottom: 22px; transform: translate(-50%, 20px);
+        background: var(--ink); color: var(--bg);
+        font-weight: 700; font-size: 14px;
+        padding: 11px 18px; border-radius: 999px;
+        opacity: 0; pointer-events: none; transition: opacity .25s, transform .25s;
+        z-index: 50; max-width: calc(100vw - 32px); text-align: center;
+      }
+      .toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+      /* ---------- Role / access ---------- */
+      .rolebar {
+        display: flex; flex-wrap: wrap; align-items: center; gap: 10px;
+        background: var(--surface); border: 1px solid var(--line);
+        border-radius: var(--radius); box-shadow: var(--shadow);
+        padding: 10px 12px; margin-bottom: 12px;
+      }
+      .rolebar .role-lead { font-size: 13px; font-weight: 800; letter-spacing: .04em; }
+      .rolebar .role-path { font-size: 12.5px; color: var(--ink-soft); font-weight: 700; }
+      .rolebar .role-path code { background: var(--surface-2); border: 1px solid var(--line); border-radius: 6px; padding: 1px 7px; font-family: ui-monospace, monospace; font-size: 12px; color: var(--ink); }
+      .role-tabs { display: inline-flex; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; background: var(--surface-2); }
+      .role-tabs a {
+        text-decoration: none; color: var(--ink-soft); font-weight: 800; font-size: 14px;
+        padding: 9px 16px; min-height: 40px; display: inline-flex; align-items: center; gap: 6px;
+      }
+      .role-tabs a[aria-current="page"] { background: var(--ink); color: var(--bg); }
+      .role-status { font-size: 12.5px; font-weight: 800; border-radius: 999px; padding: 5px 12px; background: var(--gold-soft); color: var(--ink); border: 1px solid var(--line); }
+      .role-status.admin { background: var(--accent); color: #fff; border-color: var(--accent); }
+      .conn-status { font-size: 12.5px; font-weight: 800; border-radius: 999px; padding: 5px 12px; border: 1px solid var(--line); background: var(--surface-2); color: var(--ink-soft); display: inline-flex; align-items: center; gap: 7px; }
+      .conn-status .cdot { width: 8px; height: 8px; border-radius: 50%; background: #9a8f7a; flex: none; }
+      .conn-status.live { color: var(--ink); background: #e2f2e6; border-color: #bcdcc4; }
+      .conn-status.live .cdot { background: var(--ok); }
+      .conn-status.error { color: var(--accent); background: #fdeceb; border-color: #f3c4bd; }
+      .conn-status.error .cdot { background: var(--accent); }
+      @media (prefers-color-scheme: dark) {
+        .conn-status.live { background: #1d3325; border-color: #2e523a; }
+        .conn-status.error { background: #3d201b; border-color: #6e352c; }
+      }
+      body:not(.is-admin-unlocked) .controls { display: none; }
+      body:not(.is-admin-unlocked) .list-actions { display: none; }
+      body.is-participant .howto { display: none; }
+      body:not(.is-admin-unlocked) #fbPanel { display: none; }
+      .admin-only-note { display: none; }
+      body:not(.is-admin-unlocked) .admin-only-note {
+        display: block; margin-top: 12px; font-size: 13px; color: var(--ink-soft); line-height: 1.6;
+        background: var(--surface); border: 1px dashed var(--line); border-radius: var(--radius); padding: 12px 14px;
+      }
+      ul.comments .own-badge {
+        display: inline-block; font-size: 11px; font-weight: 800; color: #fff; background: var(--ok);
+        border-radius: 999px; padding: 1px 8px; margin-left: 7px; vertical-align: 1px;
+      }
+      ul.comments .row-btns { display: flex; gap: 2px; flex: none; }
+      ul.comments .edit-btn {
+        appearance: none; border: 0; background: transparent; cursor: pointer;
+        color: var(--ink-soft); height: 40px; padding: 0 10px; flex: none;
+        border-radius: 8px; font: inherit; font-size: 13px; font-weight: 800;
+        display: inline-flex; align-items: center;
+      }
+      ul.comments .edit-btn:hover { background: var(--surface-2); color: var(--ink); }
+      .edit-box { margin-top: 8px; display: grid; gap: 8px; }
+      .edit-box textarea { min-height: 52px; font-size: 15px; }
+      .edit-box .edit-row { display: flex; gap: 8px; flex-wrap: wrap; }
+      body.is-participant .stage { height: min(38vh, 340px); min-height: 240px; }
+      @media (max-width: 760px) { body.is-participant .stage { height: 30vh; min-height: 210px; } }
+
+      /* ---------- Firebase panel ---------- */
+      .fb-panel {
+        margin-top: 14px; background: var(--surface);
+        border: 1px solid var(--line); border-radius: var(--radius);
+        box-shadow: var(--shadow); padding: 18px;
+      }
+      .fb-panel h2 { margin: 0 0 4px; font-size: 17px; font-weight: 800; font-family: "Zen Maru Gothic", sans-serif; letter-spacing: .03em; }
+      .fb-panel .hint { margin: 0 0 12px; font-size: 13px; color: var(--ink-soft); line-height: 1.65; }
+      .fb-steps { margin: 0 0 14px; padding-left: 1.3em; font-size: 13.5px; line-height: 1.85; color: var(--ink-soft); }
+      .fb-steps b { color: var(--ink); }
+      .fb-steps a { color: var(--accent); font-weight: 700; }
+      .fb-config {
+        width: 100%; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12.5px;
+        min-height: 118px; line-height: 1.55;
+      }
+      .fb-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; align-items: center; }
+      .fb-msg { font-size: 13px; font-weight: 700; line-height: 1.6; }
+      .fb-msg.ok { color: var(--ok); }
+      .fb-msg.err { color: var(--accent); }
+      .fb-rules {
+        margin: 12px 0 0; background: var(--bg); border: 1px solid var(--line); border-radius: 10px;
+        padding: 10px 12px; font-family: ui-monospace, monospace; font-size: 12px; line-height: 1.6;
+        white-space: pre-wrap; overflow-wrap: anywhere; color: var(--ink-soft);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+
+      <!-- ===== Role switcher (path-based) ===== -->
+      <nav class="rolebar" aria-label="利用モード">
+        <span class="role-lead">利用モード</span>
+        <div class="role-tabs">
+          <a href="#post" id="tabPost">参加者（投稿のみ）</a>
+        </div>
+        <span class="role-status" id="roleStatus">参加者モード</span>
+        <span class="conn-status" id="connStatus"><span class="cdot"></span><span id="connLabel">この端末のみ（未接続）</span></span>
+        <span class="spacer"></span>
+        <span class="role-path" id="rolePath" hidden></span>
+      </nav>
+
+      <!-- ===== Projector screen ===== -->
+      <section class="stage fs-mid" id="stage" aria-label="投影スクリーン">
+        <div class="flow-layer" id="flowLayer"></div>
+
+        <div class="spot-layer">
+          <div class="spot-card" id="spotCard">
+            <div class="spot-name" id="spotName"></div>
+            <div class="spot-text" id="spotText"></div>
+          </div>
+        </div>
+        <div class="spot-progress"><div id="spotBar"></div></div>
+
+        <div class="stage-empty" id="stageEmpty">コメントがまだありません。<br />参加者のスマホから投稿されると、ここに流れます。</div>
+
+        <div class="stage-head">
+          <div class="stage-title"><span class="year">2026</span> 忘年会</div>
+          <div class="stage-meta">
+            <span class="live-dot" id="liveDot"></span>
+            <span id="liveLabel">ループ再生中</span>
+            <span>・</span>
+            <span><span id="headCount">0</span>件</span>
+          </div>
+        </div>
+        <div class="stage-frame"></div>
+      </section>
+
+      <!-- ===== Playback controls ===== -->
+      <div class="controls" role="group" aria-label="再生コントロール">
+        <button class="btn primary" id="playBtn" type="button">
+          <svg id="playIcon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 5h4v14H7zM13 5h4v14h-4z"/></svg>
+          <span id="playLabel">一時停止</span>
+        </button>
+
+        <div class="ctl-group">
+          <span class="ctl-label">表示</span>
+          <div class="seg" role="group" aria-label="表示モード">
+            <button type="button" id="modeFlow" aria-pressed="true">流れる</button>
+            <button type="button" id="modeSpot" aria-pressed="false">1件ずつ大きく</button>
+          </div>
+        </div>
+
+        <div class="ctl-group">
+          <span class="ctl-label">速さ</span>
+          <input type="range" id="speed" min="0.5" max="2" step="0.25" value="1" aria-label="再生速度" />
+          <span class="speed-val" id="speedVal">1.0×</span>
+        </div>
+
+        <div class="ctl-group">
+          <span class="ctl-label">文字</span>
+          <div class="seg" role="group" aria-label="文字サイズ">
+            <button type="button" data-fs="fs-small" aria-pressed="false">小</button>
+            <button type="button" data-fs="fs-mid" aria-pressed="true">中</button>
+            <button type="button" data-fs="fs-large" aria-pressed="false">大</button>
+          </div>
+        </div>
+
+        <span class="spacer"></span>
+
+        <button class="btn" id="fsBtn" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>
+          スクリーンを全画面に
+        </button>
+      </div>
+      <p class="admin-only-note" id="adminOnlyNote">再生・速度・文字サイズ・表示モードなどの設定は管理者（実行委員）だけが変更できます。参加者はこのままコメント投稿のみご利用ください。</p>
+
+      <!-- ===== Post + list ===== -->
+      <div class="panels">
+        <section class="panel" aria-labelledby="postH">
+          <h2 id="postH">コメントを投稿</h2>
+          <p class="hint" id="postHint">投稿すると、すぐにスクリーンのループに加わります。</p>
+
+          <form id="postForm">
+            <label class="field">
+              <span>名前 <span class="opt">（任意・空欄なら「ゲスト」）</span></span>
+              <input type="text" id="nameInput" maxlength="20" placeholder="例：たなか" autocomplete="off" />
+            </label>
+            <label class="field">
+              <span>コメント</span>
+              <textarea id="textInput" maxlength="60" placeholder="例：今年もお疲れさまでした！" required></textarea>
+            </label>
+
+            <span style="display:block;font-size:13px;font-weight:700;margin-bottom:6px;">文字の色</span>
+            <div class="colors" id="colorRow" role="group" aria-label="文字の色"></div>
+
+            <div class="submit-row">
+              <button class="btn primary" type="submit" id="submitBtn" style="min-height:46px;padding:10px 22px;font-size:15px;">スクリーンに送る</button>
+              <span class="char-count"><span id="charCount">0</span> / 60文字</span>
+            </div>
+          </form>
+        </section>
+
+        <section class="panel" aria-labelledby="listH">
+          <div class="list-head">
+            <h2 id="listH">ループ中のコメント</h2>
+            <span class="count-badge"><span id="listCount">0</span>件</span>
+          </div>
+          <p class="hint" id="listHint">編集・削除できるのは自分の投稿だけです。</p>
+          <div class="sample-note" id="sampleNote">いま表示されているのは動作確認用のサンプルコメントです（Firebase未接続のこの端末内だけの表示）。Firebaseに接続すると全員の投稿が共有されます。本番前は管理者モードで全消ししてください。</div>
+          <ul class="comments" id="commentList"></ul>
+          <div class="list-empty" id="listEmpty">コメントはありません。フォームから投稿すると、ここに追加されます。</div>
+          <div class="list-actions">
+            <button class="btn small" id="shuffleBtn" type="button">順番をシャッフル</button>
+            <button class="btn small danger" id="clearBtn" type="button">すべて消す</button>
+          </div>
+        </section>
+      </div>
+
+      <!-- ===== Firebase connection (admin only) ===== -->
+      <section class="fb-panel" id="fbPanel" aria-labelledby="fbH">
+        <h2 id="fbH">Firebase接続（全員のスマホと共有）</h2>
+        <p class="hint">Firebaseの Cloud Firestore に接続すると、約150人それぞれのスマホからの投稿が1つのスクリーンにリアルタイムで集まります。同時接続数の上限がないため150人規模でも使え、無料枠（Sparkプラン）で足ります。</p>
+        <ol class="fb-steps">
+          <li><a href="https://console.firebase.google.com/" target="_blank" rel="noopener">Firebaseコンソール</a>でプロジェクトを作成する（名前は自由、GoogleアナリティクスはオフでOK）</li>
+          <li>左メニュー「構築 → Firestore Database」でデータベースを作成する。場所は <b>asia-northeast1（東京）</b>、<b>本番環境モード</b>で開始する</li>
+          <li>Firestoreの「ルール」タブに、下記のルールを貼り付けて公開する（本番環境モードの初期ルールは全拒否のため、この変更が必須です）</li>
+          <li>プロジェクトの概要画面で Webアプリ（&lt;/&gt;）を登録すると表示される <b>firebaseConfig</b> をコピーする</li>
+          <li>下の欄に貼り付けて「Firebaseに接続」を押す（この画面での動作確認用）</li>
+          <li><b>本番（GitHub Pages）では必須：</b>下の「設定入りHTMLをダウンロード」で、設定を埋め込んだ完成品HTMLを保存し、それをGitHub Pagesへアップロードする。全員のスマホはその設定で開いた瞬間に自動接続します</li>
+        </ol>
+        <label class="field" style="margin-bottom:0;">
+          <span>firebaseConfig（JSON形式で貼り付け）</span>
+          <textarea class="fb-config" id="fbConfigInput" spellcheck="false" placeholder='{
+  "apiKey": "…",
+  "authDomain": "….firebaseapp.com",
+  "projectId": "…",
+  "storageBucket": "….appspot.com",
+  "messagingSenderId": "…",
+  "appId": "…"
+}'></textarea>
+        </label>
+        <div class="fb-actions">
+          <button class="btn primary" id="fbConnectBtn" type="button">Firebaseに接続</button>
+          <button class="btn" id="fbDownloadBtn" type="button">設定入りHTMLをダウンロード（本番用）</button>
+          <button class="btn" id="fbDisconnectBtn" type="button">切断してこの端末のみに戻す</button>
+          <span class="fb-msg" id="fbMsg" role="status"></span>
+        </div>
+        <p class="hint" style="margin:12px 0 0;">Firestoreの「ルール」タブに下記を貼り付けてください。コメントと表示設定だけを公開で読み書きできるようにするルールです。イベント専用プロジェクトとして使い、終了後はプロジェクトごと削除する前提です。開催日が決まっている場合は、2行目の期限（2027年1月31日）を当日の翌日などに変えると、その日時を過ぎたら自動で書き込みが止まります。</p>
+        <div class="fb-rules">rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function inEventPeriod() {
+      return request.time &lt; timestamp.date(2027, 1, 31);
+    }
+    match /comments/{commentId} {
+      allow read: if true;
+      allow create, update, delete: if inEventPeriod();
+    }
+    match /settings/{docId} {
+      allow read: if true;
+      allow write: if inEventPeriod();
+    }
+  }
+}</div>
+      </section>
+
+      <section class="howto" aria-labelledby="howtoH">
+        <h2 id="howtoH">当日の使い方（パス分けと権限）</h2>
+        <ol>
+          <li><b>事前準備</b>：上の「Firebase接続」の手順で設定を済ませ、「設定入りHTMLをダウンロード」で作った完成品をGitHub Pagesに公開する</li>
+          <li><b>参加者には投稿専用のURL</b>をQRコードなどで配布する。参加者はコメント投稿のみ可能で、再生・速度・文字サイズなどの設定は一切表示されません。投稿はFirebase経由で全端末に即時反映されます</li>
+          <li><b>管理者用パス</b>（実行委員だけに別途共有したランダム16桁のパス）は参加者には配布しない。このパスで開くと設定変更と全コメントの管理が使えます（設定変更もFirebase経由で投影画面に同期します）。ページのソースにはパスのハッシュ値だけを保持し、パスそのものは埋め込んでいません</li>
+          <li>参加者は<b>自分が投稿したコメントだけ</b>、右側の「編集」「削除」から直せます。他の人の投稿は見るだけです（同じスマホ・同じ表示のあいだだけ「自分の投稿」と判定します）</li>
+          <li>幹事のPCでは管理者モードで開き、<b>「スクリーンを全画面に」</b>でプロジェクターに投影する</li>
+        </ol>
+      </section>
+    </div>
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+    <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
+    <script>
+      (function () {
+        "use strict";
+
+        /* ============================================================
+           Firebase設定（本番用）
+           GitHub Pagesに公開する前に、Firebaseコンソールで取得した
+           firebaseConfig を下の null の代わりに貼り付けてください。
+           例：
+           var FIREBASE_CONFIG = {
+             apiKey: "…",
+             authDomain: "….firebaseapp.com",
+             projectId: "…",
+             storageBucket: "….appspot.com",
+             messagingSenderId: "…",
+             appId: "…"
+           };
+           この設定が入っていれば、参加者・管理者・投影PCのすべてが
+           開いた瞬間に自動でFirebaseへ接続し、投稿が共有されます。
+           ============================================================ */
+        var FIREBASE_CONFIG = {
+          apiKey: "AIzaSyDfFUfWPXxyPoN0Nja_fYwyDC4Tr_pUat4",
+          authDomain: "bounenkai-comment-app.firebaseapp.com",
+          projectId: "bounenkai-comment-app",
+          storageBucket: "bounenkai-comment-app.firebasestorage.app",
+          messagingSenderId: "303106426757",
+          appId: "1:303106426757:web:7aa5c1b7614a9e44b6e6ec"
+        };
+
+        var COLORS = [
+          { id: "white", hex: "#fdf8ec", label: "白" },
+          { id: "gold",  hex: "#f5b942", label: "金" },
+          { id: "pink",  hex: "#ff9db1", label: "ピンク" },
+          { id: "sky",   hex: "#8fd0ff", label: "水色" },
+          { id: "mint",  hex: "#93e6b8", label: "ミント" },
+          { id: "red",   hex: "#ff7a5c", label: "朱" }
+        ];
+        var samples = [
+          { name: "幹事・さとう", text: "今年も1年お疲れさまでした！", color: "gold" },
+          { name: "たなか", text: "乾杯〜！🍻", color: "white" },
+          { name: "すずき", text: "今年のMVPは営業チームだと思います！", color: "sky" },
+          { name: "やまだ", text: "来年もよろしくお願いします", color: "pink" },
+          { name: "新人・こばやし", text: "入社1年目、皆さんに支えられました。ありがとうございました！", color: "mint" },
+          { name: "わたなべ", text: "二次会はカラオケでお願いします🎤", color: "red" },
+          { name: "いとう", text: "今年の忘年会、料理が豪華すぎる…！", color: "white" },
+          { name: "なかむら", text: "来年の目標は資格取得です。頑張ります！", color: "gold" }
+        ];
+
+        /* Access is split by path only: participants are handed the
+           #post path and never see the settings; the committee uses the
+           secret admin path, which is not distributed to participants. */
+        /* Identity of "me" for this open page only (kept in memory, never
+           saved): comments posted in this session carry this owner id,
+           and only those can be edited / deleted in participant mode. */
+        var sessionId = "u-" + Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
+
+        /* The admin path itself is never embedded in this page: only its
+           SHA-256 hash is kept here, and the URL fragment is hashed in the
+           browser and compared. Reading the source therefore does not
+           reveal the path (a 16-character random string cannot be
+           recovered from its hash). */
+        var ADMIN_PATH_SHA256 = "00f9823b94fdb57c7af1c01f1ea419635eb57173e17efae162af49a23abb9d0b";
+        function sha256Hex(text) {
+          if (!window.crypto || !crypto.subtle || !crypto.subtle.digest) return Promise.resolve(null);
+          return crypto.subtle.digest("SHA-256", new TextEncoder().encode(text)).then(function (buf) {
+            var bytes = new Uint8Array(buf), hex = "";
+            for (var i = 0; i < bytes.length; i++) hex += ("0" + bytes[i].toString(16)).slice(-2);
+            return hex;
+          }).catch(function () { return null; });
+        }
+        function resolveRole() {
+          var frag = (window.location.hash || "").replace(/^#/, "");
+          if (!frag) { state.role = "participant"; applyRole(); return; }
+          sha256Hex(frag).then(function (hex) {
+            state.role = (hex && hex === ADMIN_PATH_SHA256) ? "admin" : "participant";
+            applyRole();
+          });
+        }
+
+        var state = {
+          comments: [],
+          playing: true,
+          mode: "flow",           // "flow" | "spot"
+          speed: 1,
+          fsClass: "fs-mid",
+          color: "white",
+          spotIndex: 0,
+          spotElapsed: 0,
+          nextId: 1,
+          hasSamples: true,
+          role: "participant",   // resolved asynchronously by resolveRole() from the path hash
+          editingId: null,
+          useFirebase: false,
+          applyingRemoteSettings: false
+        };
+
+        function isAdmin() { return state.role === "admin"; }
+        function canManage(c) { return isAdmin() || c.ownerId === sessionId; }
+
+        var stage = document.getElementById("stage");
+        var flowLayer = document.getElementById("flowLayer");
+        var spotCard = document.getElementById("spotCard");
+        var spotName = document.getElementById("spotName");
+        var spotText = document.getElementById("spotText");
+        var spotBar = document.getElementById("spotBar");
+        var liveDot = document.getElementById("liveDot");
+        var liveLabel = document.getElementById("liveLabel");
+        var toastEl = document.getElementById("toast");
+        var toastTimer = null;
+        var postHint = document.getElementById("postHint");
+
+        function colorHex(id) {
+          for (var i = 0; i < COLORS.length; i++) if (COLORS[i].id === id) return COLORS[i].hex;
+          return COLORS[0].hex;
+        }
+        function toast(msg) {
+          toastEl.textContent = msg;
+          toastEl.classList.add("show");
+          if (toastTimer) clearTimeout(toastTimer);
+          toastTimer = setTimeout(function () { toastEl.classList.remove("show"); }, 2400);
+        }
+
+        /* ================= Flow engine ================= */
+        var entities = [];   // {comment, el, x, lane, w}
+        var TOP_OFFSET = 64; // keep clear of stage header
+
+        function laneCount() {
+          var fs = state.fsClass === "fs-small" ? 22 : state.fsClass === "fs-large" ? 40 : 30;
+          var laneH = fs * 1.9;
+          var usable = Math.max(stage.clientHeight - TOP_OFFSET - 16, laneH);
+          return Math.max(2, Math.floor(usable / laneH));
+        }
+        function laneTop(lane) {
+          var fs = state.fsClass === "fs-small" ? 22 : state.fsClass === "fs-large" ? 40 : 30;
+          return TOP_OFFSET + lane * fs * 1.9;
+        }
+
+        function buildFlow() {
+          flowLayer.innerHTML = "";
+          entities = [];
+          var lanes = laneCount();
+          var cursors = [];
+          for (var li = 0; li < lanes; li++) cursors.push(-120 + li * 150);
+          state.comments.forEach(function (c, i) {
+            var el = document.createElement("div");
+            el.className = "flow-item";
+            el.style.color = colorHex(c.color);
+            var nm = document.createElement("span");
+            nm.className = "fname";
+            nm.textContent = c.name;
+            var tx = document.createElement("span");
+            tx.textContent = c.text;
+            el.appendChild(nm);
+            el.appendChild(tx);
+            flowLayer.appendChild(el);
+            var w = el.offsetWidth || 200;
+            var lane = i % lanes;
+            var x = cursors[lane];
+            cursors[lane] = x + w + 170;
+            el.style.top = laneTop(lane) + "px";
+            el.style.transform = "translateX(" + x + "px)";
+            entities.push({ comment: c, el: el, x: x, lane: lane, w: w });
+          });
+        }
+
+        function laneRightEdge(lane, except) {
+          var max = -Infinity;
+          for (var i = 0; i < entities.length; i++) {
+            var e = entities[i];
+            if (e.lane === lane && e !== except) max = Math.max(max, e.x + e.w);
+          }
+          return max;
+        }
+
+        var lastTs = null;
+        function tick(ts) {
+          if (lastTs == null) lastTs = ts;
+          var dt = Math.min((ts - lastTs) / 1000, 0.05);
+          lastTs = ts;
+          if (state.playing && state.comments.length) {
+            if (state.mode === "flow") {
+              var dx = 115 * state.speed * dt;
+              var W = stage.clientWidth;
+              for (var i = 0; i < entities.length; i++) {
+                var e = entities[i];
+                e.x -= dx;
+                if (e.x + e.w < -20) {
+                  var edge = laneRightEdge(e.lane, e);
+                  e.x = Math.max(W + 30, edge + 140);
+                }
+                e.el.style.transform = "translateX(" + e.x + "px)";
+              }
+            } else {
+              var dur = 4200 / state.speed;
+              state.spotElapsed += dt * 1000;
+              spotBar.style.width = Math.min(state.spotElapsed / dur * 100, 100) + "%";
+              if (state.spotElapsed >= dur) {
+                state.spotElapsed = 0;
+                state.spotIndex = (state.spotIndex + 1) % state.comments.length;
+                renderSpot(true);
+              }
+            }
+          }
+          requestAnimationFrame(tick);
+        }
+
+        function renderSpot(animate) {
+          if (!state.comments.length) return;
+          if (state.spotIndex >= state.comments.length) state.spotIndex = 0;
+          var c = state.comments[state.spotIndex];
+          spotName.textContent = c.name;
+          spotText.textContent = c.text;
+          spotText.style.color = colorHex(c.color);
+          if (animate) {
+            spotCard.classList.remove("enter");
+            void spotCard.offsetWidth;
+            spotCard.classList.add("enter");
+          }
+          spotBar.style.width = "0%";
+        }
+
+        /* ================= List rendering ================= */
+        var listEl = document.getElementById("commentList");
+        var listEmpty = document.getElementById("listEmpty");
+        var sampleNote = document.getElementById("sampleNote");
+
+        function renderList() {
+          listEl.innerHTML = "";
+          state.comments.forEach(function (c) {
+            var li = document.createElement("li");
+            var dot = document.createElement("span");
+            dot.className = "dot";
+            dot.style.background = colorHex(c.color);
+            var body = document.createElement("div");
+            body.className = "body";
+            var nm = document.createElement("div");
+            nm.className = "cname";
+            nm.textContent = c.name;
+            var mine = c.ownerId === sessionId;
+            if (mine) {
+              var badge = document.createElement("span");
+              badge.className = "own-badge";
+              badge.textContent = "自分の投稿";
+              nm.appendChild(badge);
+            } else if (isAdmin()) {
+              var ab = document.createElement("span");
+              ab.className = "own-badge";
+              ab.style.background = "var(--accent)";
+              ab.textContent = "管理者として編集可";
+              nm.appendChild(ab);
+            }
+            body.appendChild(nm);
+
+            if (state.editingId === c.id && canManage(c)) {
+              var editBox = document.createElement("div");
+              editBox.className = "edit-box";
+              var ta = document.createElement("textarea");
+              ta.maxLength = 60;
+              ta.value = c.text;
+              ta.setAttribute("aria-label", "コメントを編集");
+              var row = document.createElement("div");
+              row.className = "edit-row";
+              var save = document.createElement("button");
+              save.type = "button"; save.className = "btn small primary"; save.textContent = "保存する";
+              save.addEventListener("click", function () {
+                var v = ta.value.trim();
+                if (!v) { toast("コメントを入力してください"); ta.focus(); return; }
+                state.editingId = null;
+                updateCommentText(c.id, v);
+              });
+              var cancel = document.createElement("button");
+              cancel.type = "button"; cancel.className = "btn small"; cancel.textContent = "キャンセル";
+              cancel.addEventListener("click", function () { state.editingId = null; renderList(); });
+              row.appendChild(save); row.appendChild(cancel);
+              editBox.appendChild(ta); editBox.appendChild(row);
+              body.appendChild(editBox);
+            } else {
+              var tx = document.createElement("div");
+              tx.className = "ctext";
+              tx.textContent = c.text;
+              body.appendChild(tx);
+            }
+            li.appendChild(dot);
+            li.appendChild(body);
+
+            if (canManage(c)) {
+              var btns = document.createElement("div");
+              btns.className = "row-btns";
+              if (state.editingId !== c.id) {
+                var edit = document.createElement("button");
+                edit.type = "button"; edit.className = "edit-btn"; edit.textContent = "編集";
+                edit.setAttribute("aria-label", "このコメントを編集");
+                edit.addEventListener("click", function () { state.editingId = c.id; renderList(); });
+                btns.appendChild(edit);
+              }
+              var del = document.createElement("button");
+              del.type = "button";
+              del.className = "del";
+              del.setAttribute("aria-label", "このコメントを削除");
+              del.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2m3 0v12a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V7"/></svg>';
+              del.addEventListener("click", function () { removeComment(c.id); });
+              btns.appendChild(del);
+              li.appendChild(btns);
+            }
+            listEl.appendChild(li);
+          });
+          document.getElementById("listCount").textContent = state.comments.length;
+          document.getElementById("headCount").textContent = state.comments.length;
+          listEmpty.classList.toggle("show", state.comments.length === 0);
+          sampleNote.classList.toggle("show", state.hasSamples && !state.useFirebase && state.comments.length > 0);
+          stage.classList.toggle("is-empty", state.comments.length === 0);
+        }
+
+        function refreshStage() {
+          renderList();
+          buildFlow();
+          if (state.mode === "spot") renderSpot(false);
+        }
+
+        /* Remote updates can arrive while this user is mid-edit; keep the
+           edit box (and its typed text) intact and only refresh the stage. */
+        function refreshFromRemote() {
+          if (state.editingId) {
+            document.getElementById("listCount").textContent = state.comments.length;
+            document.getElementById("headCount").textContent = state.comments.length;
+            stage.classList.toggle("is-empty", state.comments.length === 0);
+            buildFlow();
+            if (state.mode === "spot") renderSpot(false);
+          } else {
+            refreshStage();
+          }
+        }
+
+        /* ================= Data layer (local / Firebase) ================= */
+        var fbApp = null, fbDb = null, commentsRef = null, settingsRef = null;
+        var unsubComments = null, unsubSettings = null;
+        var connStatus = document.getElementById("connStatus");
+        var connLabel = document.getElementById("connLabel");
+        var fbMsg = document.getElementById("fbMsg");
+
+        function setConnStatus(kind, label) {
+          connStatus.classList.remove("live", "error");
+          if (kind) connStatus.classList.add(kind);
+          connLabel.textContent = label;
+        }
+        function setFbMsg(text, cls) {
+          fbMsg.textContent = text || "";
+          fbMsg.className = "fb-msg" + (cls ? " " + cls : "");
+        }
+
+        function addComment(name, text, color) {
+          if (state.useFirebase && commentsRef) {
+            commentsRef.add({
+              name: name || "ゲスト",
+              text: text,
+              color: color || state.color,
+              ownerId: sessionId,
+              order: Date.now(),
+              createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            }).then(function () { toast("コメントをスクリーンに送りました"); })
+              .catch(function () { toast("送信に失敗しました。接続とFirestoreのルールを確認してください"); });
+            return;
+          }
+          var c = { id: "local-" + (state.nextId++), name: name || "ゲスト", text: text, color: color || state.color, ownerId: sessionId };
+          state.comments.push(c);
+          state.hasSamples = false;
+          refreshStage();
+          if (state.mode === "flow") {
+            var e = entities[entities.length - 1];
+            if (e) {
+              var edge = laneRightEdge(e.lane, e);
+              e.x = Math.max(stage.clientWidth + 20, Math.min(edge + 140, stage.clientWidth + 320));
+            }
+          } else {
+            state.spotIndex = state.comments.length - 1;
+            state.spotElapsed = 0;
+            renderSpot(true);
+          }
+          toast("コメントをスクリーンに送りました");
+        }
+
+        function updateCommentText(id, v) {
+          if (state.useFirebase && commentsRef) {
+            commentsRef.doc(id).update({ text: v }).then(function () {
+              toast("コメントを編集しました");
+              renderList();
+            }).catch(function () { toast("編集の保存に失敗しました"); renderList(); });
+            return;
+          }
+          state.comments.forEach(function (c) { if (c.id === id) c.text = v; });
+          state.hasSamples = false;
+          refreshStage();
+          toast("コメントを編集しました");
+        }
+
+        function removeComment(id) {
+          var target = null;
+          state.comments.forEach(function (c) { if (c.id === id) target = c; });
+          if (!target) return;
+          if (!canManage(target)) { toast("削除できるのは自分の投稿だけです"); return; }
+          if (state.editingId === id) state.editingId = null;
+          if (state.useFirebase && commentsRef) {
+            commentsRef.doc(id).delete().then(function () { toast("コメントを削除しました"); })
+              .catch(function () { toast("削除に失敗しました"); });
+            return;
+          }
+          state.comments = state.comments.filter(function (c) { return c.id !== id; });
+          if (state.spotIndex >= state.comments.length) state.spotIndex = 0;
+          refreshStage();
+          toast("コメントを削除しました");
+        }
+
+        function clearAllComments() {
+          if (state.useFirebase && commentsRef && fbDb) {
+            var batch = fbDb.batch();
+            state.comments.forEach(function (c) { batch.delete(commentsRef.doc(c.id)); });
+            batch.commit().then(function () { toast("コメントをすべて消しました"); })
+              .catch(function () { toast("全消しに失敗しました"); });
+            return;
+          }
+          state.comments = [];
+          state.hasSamples = false;
+          state.spotIndex = 0;
+          refreshStage();
+          toast("コメントをすべて消しました");
+        }
+
+        function shuffleComments() {
+          if (state.useFirebase && commentsRef && fbDb) {
+            var batch2 = fbDb.batch();
+            state.comments.forEach(function (c) { batch2.update(commentsRef.doc(c.id), { order: Math.random() * 1000000000 }); });
+            batch2.commit().then(function () { toast("順番をシャッフルしました"); })
+              .catch(function () { toast("シャッフルに失敗しました"); });
+            return;
+          }
+          for (var i = state.comments.length - 1; i > 0; i--) {
+            var j = Math.floor(Math.random() * (i + 1));
+            var t = state.comments[i]; state.comments[i] = state.comments[j]; state.comments[j] = t;
+          }
+          refreshStage();
+          toast("順番をシャッフルしました");
+        }
+
+        /* ---------- Settings sync ---------- */
+        var settingsWriteTimer = null;
+        function pushSettings() {
+          if (!state.useFirebase || !settingsRef || state.applyingRemoteSettings) return;
+          if (settingsWriteTimer) clearTimeout(settingsWriteTimer);
+          settingsWriteTimer = setTimeout(function () {
+            settingsRef.set({
+              playing: state.playing,
+              mode: state.mode,
+              speed: state.speed,
+              fsClass: state.fsClass
+            }, { merge: true }).catch(function () { /* keep local state even if the write fails */ });
+          }, 120);
+        }
+
+        function applyRemoteSettings(s) {
+          if (!s) return;
+          state.applyingRemoteSettings = true;
+          if (typeof s.playing === "boolean") setPlayingUI(s.playing);
+          if (s.mode === "flow" || s.mode === "spot") setModeUI(s.mode);
+          if (typeof s.speed === "number") {
+            state.speed = s.speed;
+            speedInput.value = s.speed;
+            speedVal.textContent = formatSpeed(s.speed);
+          }
+          if (s.fsClass && s.fsClass !== state.fsClass) setFsUI(s.fsClass);
+          state.applyingRemoteSettings = false;
+        }
+
+        /* ---------- Firebase connect / disconnect ---------- */
+        function connectFirebase(cfg, fromAuto) {
+          if (typeof firebase === "undefined" || !firebase.firestore) {
+            setConnStatus("error", "Firebase読み込み失敗");
+            setFbMsg("Firebaseの読み込みに失敗しました。ネット接続を確認して再読み込みしてください。", "err");
+            return false;
+          }
+          if (!cfg || !cfg.projectId || !cfg.apiKey) {
+            setFbMsg("設定に projectId / apiKey が含まれていません。firebaseConfig 全体を貼り付けてください。", "err");
+            return false;
+          }
+          try {
+            if (fbApp) { disconnectFirebase(true); }
+            fbApp = firebase.initializeApp(cfg, "bonenkai-" + Date.now());
+            fbDb = fbApp.firestore();
+            commentsRef = fbDb.collection("comments");
+            settingsRef = fbDb.collection("settings").doc("main");
+          } catch (err) {
+            setConnStatus("error", "接続エラー");
+            setFbMsg("接続に失敗しました：" + (err && err.message ? err.message : err), "err");
+            fbApp = null; fbDb = null; commentsRef = null; settingsRef = null;
+            return false;
+          }
+
+          state.useFirebase = true;
+          state.hasSamples = false;
+          state.comments = [];
+          state.editingId = null;
+          setConnStatus("", "Firebaseへ接続中…");
+          setFbMsg("接続中…", "");
+          postHint.textContent = "投稿すると、全員のスマホとスクリーンにすぐ反映されます。";
+
+          var firstSnapshot = true;
+          unsubComments = commentsRef.orderBy("order", "asc").onSnapshot(function (snap) {
+            var arr = [];
+            snap.forEach(function (doc) {
+              var v = doc.data() || {};
+              arr.push({
+                id: doc.id,
+                name: v.name || "ゲスト",
+                text: v.text || "",
+                color: v.color || "white",
+                ownerId: v.ownerId || "",
+                order: v.order || 0
+              });
+            });
+            state.comments = arr;
+            if (state.spotIndex >= state.comments.length) state.spotIndex = 0;
+            setConnStatus("live", "Firestore接続中（全員で共有）");
+            if (firstSnapshot) {
+              firstSnapshot = false;
+              setFbMsg("接続しました。参加者のスマホからの投稿がここに集まります。本番公開時は「設定入りHTMLをダウンロード」で完成品を作ってGitHub Pagesへアップロードしてください。", "ok");
+              if (!fromAuto) toast("Firebaseに接続しました");
+            }
+            refreshFromRemote();
+          }, function (err) {
+            setConnStatus("error", "受信エラー");
+            setFbMsg("コメントの受信に失敗しました：" + (err && err.message ? err.message : err) + "（Firestoreを作成済みか、ルールを公開済みか確認してください）", "err");
+          });
+
+          unsubSettings = settingsRef.onSnapshot(function (snap) {
+            applyRemoteSettings(snap.exists ? snap.data() : null);
+          }, function () { /* settings are optional until an admin changes them */ });
+
+          refreshStage();
+          return true;
+        }
+
+        function disconnectFirebase(silent) {
+          if (unsubComments) { try { unsubComments(); } catch (e) {} unsubComments = null; }
+          if (unsubSettings) { try { unsubSettings(); } catch (e) {} unsubSettings = null; }
+          var appToDelete = fbApp;
+          fbApp = null; fbDb = null; commentsRef = null; settingsRef = null;
+          state.useFirebase = false;
+          if (appToDelete && appToDelete.delete) appToDelete.delete().catch(function () {});
+          if (!silent) {
+            state.comments = [];
+            state.hasSamples = false;
+            loadSamples();
+            setConnStatus("", "この端末のみ（未接続）");
+            setFbMsg("切断しました。今はこの端末内だけの表示です。", "");
+            postHint.textContent = "投稿すると、すぐにスクリーンのループに加わります。";
+            refreshStage();
+          }
+        }
+
+        function loadSamples() {
+          state.comments = [];
+          samples.forEach(function (s) {
+            state.comments.push({ id: "local-" + (state.nextId++), name: s.name, text: s.text, color: s.color, ownerId: "sample" });
+          });
+          state.hasSamples = true;
+        }
+
+        /* ================= Controls ================= */
+        var playBtn = document.getElementById("playBtn");
+        var playLabel = document.getElementById("playLabel");
+        var playIcon = document.getElementById("playIcon");
+        function guardAdmin() {
+          if (isAdmin()) return true;
+          toast("設定を変更できるのは管理者（実行委員）だけです");
+          return false;
+        }
+        function setPlayingUI(p) {
+          state.playing = p;
+          playLabel.textContent = p ? "一時停止" : "再生する";
+          playIcon.innerHTML = p
+            ? '<path d="M7 5h4v14H7zM13 5h4v14h-4z"/>'
+            : '<path d="M8 5v14l11-7z"/>';
+          liveDot.classList.toggle("paused", !p);
+          liveLabel.textContent = p ? "ループ再生中" : "一時停止中";
+        }
+        function setPlaying(p) { setPlayingUI(p); pushSettings(); }
+        playBtn.addEventListener("click", function () { if (guardAdmin()) setPlaying(!state.playing); });
+
+        var modeFlow = document.getElementById("modeFlow");
+        var modeSpot = document.getElementById("modeSpot");
+        function setModeUI(m) {
+          state.mode = m;
+          modeFlow.setAttribute("aria-pressed", m === "flow" ? "true" : "false");
+          modeSpot.setAttribute("aria-pressed", m === "spot" ? "true" : "false");
+          stage.classList.toggle("mode-spot", m === "spot");
+          state.spotElapsed = 0;
+          if (m === "spot") renderSpot(true);
+        }
+        function setMode(m) { setModeUI(m); pushSettings(); }
+        modeFlow.addEventListener("click", function () { if (guardAdmin()) setMode("flow"); });
+        modeSpot.addEventListener("click", function () { if (guardAdmin()) setMode("spot"); });
+
+        var speedInput = document.getElementById("speed");
+        var speedVal = document.getElementById("speedVal");
+        function formatSpeed(v) { return v.toFixed(2).replace(/0$/, "") + "×"; }
+        speedInput.addEventListener("input", function () {
+          if (!isAdmin()) { speedInput.value = state.speed; toast("設定を変更できるのは管理者（実行委員）だけです"); return; }
+          state.speed = parseFloat(speedInput.value);
+          speedVal.textContent = formatSpeed(state.speed);
+          pushSettings();
+        });
+
+        var fsButtons = document.querySelectorAll("[data-fs]");
+        function setFsUI(cls) {
+          stage.classList.remove("fs-small", "fs-mid", "fs-large");
+          state.fsClass = cls;
+          stage.classList.add(cls);
+          fsButtons.forEach(function (x) { x.setAttribute("aria-pressed", x.getAttribute("data-fs") === cls ? "true" : "false"); });
+          buildFlow();
+        }
+        fsButtons.forEach(function (b) {
+          b.addEventListener("click", function () {
+            if (!guardAdmin()) return;
+            setFsUI(b.getAttribute("data-fs"));
+            pushSettings();
+          });
+        });
+
+        document.getElementById("fsBtn").addEventListener("click", function () {
+          if (!guardAdmin()) return;
+          try {
+            if (document.fullscreenElement) {
+              document.exitFullscreen();
+            } else if (stage.requestFullscreen) {
+              var p = stage.requestFullscreen();
+              if (p && p.catch) p.catch(function () { toast("この環境では全画面表示が使えませんでした"); });
+            } else {
+              toast("この環境では全画面表示が使えませんでした");
+            }
+          } catch (err) {
+            toast("この環境では全画面表示が使えませんでした");
+          }
+        });
+        document.addEventListener("fullscreenchange", function () {
+          setTimeout(buildFlow, 60);
+        });
+
+        /* ================= Form ================= */
+        var colorRow = document.getElementById("colorRow");
+        COLORS.forEach(function (col) {
+          var b = document.createElement("button");
+          b.type = "button";
+          b.className = "color-chip";
+          b.setAttribute("aria-label", "文字の色：" + col.label);
+          b.setAttribute("aria-pressed", col.id === state.color ? "true" : "false");
+          var i = document.createElement("i");
+          i.style.background = col.hex;
+          b.appendChild(i);
+          b.addEventListener("click", function () {
+            state.color = col.id;
+            colorRow.querySelectorAll(".color-chip").forEach(function (x) { x.setAttribute("aria-pressed", "false"); });
+            b.setAttribute("aria-pressed", "true");
+          });
+          colorRow.appendChild(b);
+        });
+
+        var textInput = document.getElementById("textInput");
+        var charCount = document.getElementById("charCount");
+        textInput.addEventListener("input", function () { charCount.textContent = textInput.value.length; });
+
+        document.getElementById("postForm").addEventListener("submit", function (ev) {
+          ev.preventDefault();
+          var text = textInput.value.trim();
+          if (!text) { toast("コメントを入力してください"); textInput.focus(); return; }
+          var name = document.getElementById("nameInput").value.trim();
+          addComment(name, text, state.color);
+          textInput.value = "";
+          charCount.textContent = "0";
+          textInput.focus();
+        });
+
+        document.getElementById("clearBtn").addEventListener("click", function () {
+          if (!guardAdmin()) return;
+          clearAllComments();
+        });
+        document.getElementById("shuffleBtn").addEventListener("click", function () {
+          if (!guardAdmin()) return;
+          shuffleComments();
+        });
+
+        /* ================= Firebase panel (admin) ================= */
+        var fbConfigInput = document.getElementById("fbConfigInput");
+        function parseConfigInput() {
+          var raw = fbConfigInput.value.trim();
+          if (!raw) { setFbMsg("firebaseConfig を貼り付けてください。", "err"); return null; }
+          /* Accept a bare object, JSON, or the full `const firebaseConfig = {…};` snippet from the console. */
+          var open = raw.indexOf("{"), close = raw.lastIndexOf("}");
+          if (open > 0 && close > open) raw = raw.slice(open, close + 1);
+          var cfg = null;
+          try { cfg = JSON.parse(raw); }
+          catch (e) {
+            try {
+              var normalized = raw
+                .replace(/([{,]\s*)([A-Za-z0-9_]+)\s*:/g, '$1"$2":')
+                .replace(/'/g, '"')
+                .replace(/,\s*}/g, "}");
+              cfg = JSON.parse(normalized);
+            } catch (e2) { cfg = null; }
+          }
+          if (!cfg || !cfg.projectId || !cfg.apiKey) {
+            setFbMsg("設定を読み取れませんでした。projectId と apiKey を含む firebaseConfig の { } の中身ごと貼り付けてください。", "err");
+            return null;
+          }
+          return cfg;
+        }
+        document.getElementById("fbConnectBtn").addEventListener("click", function () {
+          var cfg = parseConfigInput();
+          if (cfg) connectFirebase(cfg, false);
+        });
+        /* Build the production file: this page's own source with the pasted
+           config baked into FIREBASE_CONFIG, so every participant phone
+           auto-connects to the same database on open. */
+        document.getElementById("fbDownloadBtn").addEventListener("click", function () {
+          var cfg = parseConfigInput();
+          if (!cfg) return;
+          var src = "<!doctype html>\n" + document.documentElement.outerHTML;
+          if (src.indexOf("var FIREBASE_CONFIG = null;") === -1 && !/var FIREBASE_CONFIG = \{/.test(src)) {
+            setFbMsg("この画面からは設定入りHTMLを作れませんでした。書き出したHTML内の FIREBASE_CONFIG に直接貼り付けてください。", "err");
+            return;
+          }
+          src = src.replace(/var FIREBASE_CONFIG = (null|\{[\s\S]*?\});/, "var FIREBASE_CONFIG = " + JSON.stringify(cfg, null, 2) + ";");
+          src = src.replace(/<body[^>]*>/, "<body>");
+          var blob = new Blob([src], { type: "text/html;charset=utf-8" });
+          var a = document.createElement("a");
+          a.href = URL.createObjectURL(blob);
+          a.download = "index.html";
+          document.body.appendChild(a);
+          a.click();
+          setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 400);
+          setFbMsg("設定入りHTMLをダウンロードしました。この index.html をGitHub Pagesへアップロードすれば、全員のスマホが自動でFirebaseに接続します。", "ok");
+        });
+        document.getElementById("fbDisconnectBtn").addEventListener("click", function () {
+          disconnectFirebase(false);
+          toast("Firebaseから切断しました");
+        });
+
+        var resizeTimer = null;
+        window.addEventListener("resize", function () {
+          if (resizeTimer) clearTimeout(resizeTimer);
+          resizeTimer = setTimeout(buildFlow, 150);
+        });
+
+        /* ================= Role (path-based) ================= */
+        var tabPost = document.getElementById("tabPost");
+        var roleStatus = document.getElementById("roleStatus");
+        var rolePath = document.getElementById("rolePath");
+        var listHint = document.getElementById("listHint");
+
+        function applyRole() {
+          var admin = isAdmin();
+          document.body.classList.toggle("is-participant", state.role === "participant");
+          document.body.classList.toggle("is-admin-unlocked", admin);
+          tabPost.setAttribute("aria-current", state.role === "participant" ? "page" : "false");
+          if (admin) {
+            roleStatus.textContent = "管理者モード（実行委員）";
+            roleStatus.classList.add("admin");
+            rolePath.hidden = false;
+            rolePath.textContent = "管理者モードで開いています。このパスは参加者に配布しないでください。";
+            listHint.textContent = "管理者は全員のコメントを編集・削除できます。シャッフル・全消しも管理者だけの操作です。";
+          } else {
+            roleStatus.textContent = "参加者モード（投稿のみ）";
+            roleStatus.classList.remove("admin");
+            rolePath.hidden = true;
+            rolePath.innerHTML = "";
+            listHint.textContent = "編集・削除できるのは自分の投稿だけです。";
+          }
+          renderList();
+          buildFlow();
+        }
+
+        window.addEventListener("hashchange", function () {
+          state.editingId = null;
+          resolveRole();
+        });
+
+        /* ================= Init ================= */
+        loadSamples();
+        refreshStage();
+        resolveRole();
+        setPlayingUI(true);
+        requestAnimationFrame(tick);
+        if (FIREBASE_CONFIG) {
+          fbConfigInput.value = JSON.stringify(FIREBASE_CONFIG, null, 2);
+          connectFirebase(FIREBASE_CONFIG, true);
+        }
+      })();
+    </script>
+  </body>
+</html>
